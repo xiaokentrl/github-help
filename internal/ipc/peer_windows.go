@@ -21,6 +21,10 @@ func Listen(string) (net.Listener, error) {
 	return nil, fmt.Errorf("%s: Windows 命名管道尚未实现，本期请在 Linux 上跑 M0", errs.CodeIPCPlatform)
 }
 
+// DialEndpoints 界面侧的候选清单；Windows 只有一根命名管道，名单一条。
+// 管道本身属 M1（Listen/CheckPeer 仍如实报错），这里先把形状摆齐，别让壳在 Windows 编不过。
+func DialEndpoints() ([]string, error) { return []string{pipeName}, nil }
+
 func CheckPeer(net.Conn) error {
 	return fmt.Errorf("%s: Windows 命名管道尚未实现，本期请在 Linux 上跑 M0", errs.CodeIPCPlatform)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -126,6 +127,8 @@ func (f *fakeCaller) Close() error {
 	return nil
 }
 
+func (f *fakeCaller) ActiveEndpoint() string { return "" }
+
 func (f *fakeCaller) IsConnected() bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -184,13 +187,13 @@ func testBridge(c caller, rec *recorder) *bridge {
 		known[m] = true
 	}
 	return &bridge{
-		endpoint: "/tmp/does-not-matter.sock",
-		client:   c,
-		timeout:  50 * time.Millisecond,
-		retry:    5 * time.Millisecond,
-		emit:     rec.emit,
-		logf:     rec.logf,
-		known:    known,
+		endpoints: []string{"/tmp/does-not-matter.sock"},
+		client:    c,
+		timeout:   50 * time.Millisecond,
+		retry:     5 * time.Millisecond,
+		emit:      rec.emit,
+		logf:      rec.logf,
+		known:     known,
 	}
 }
 
@@ -484,7 +487,7 @@ func TestStateFlipsOnlyWhenItActuallyChanges(t *testing.T) {
 	if !strings.Contains(string(raw), `"connected":true`) {
 		t.Fatalf("接上了要说接上了（界面靠这一句去重新要一次快照）: %s", raw)
 	}
-	if !strings.Contains(string(raw), b.endpoint) {
+	if !strings.Contains(string(raw), b.endpoints[0]) {
 		t.Fatalf("状态里要带上连的是哪儿，权限不对时人才查得出: %s", raw)
 	}
 }
@@ -589,8 +592,11 @@ func TestRealShellUsesTheDocumentedTimings(t *testing.T) {
 		t.Fatalf("重连节拍该在 0.2～5 秒之间，实际 %s", retryEvery)
 	}
 	// 真壳那条桥必须用上面这两个常量，不能测试用一套、真跑用另一套。
+	// 按正则找而不按字面找：gofmt 会收掉结构体字面量里的对齐空格，字面比对跟着对齐漂。
 	src := readGoFile(t, "bridge.go")
-	if !strings.Contains(src, "timeout:  callTimeout") || !strings.Contains(src, "retry:    retryEvery") {
+	timeoutRe := regexp.MustCompile(`timeout:\s+callTimeout`)
+	retryRe := regexp.MustCompile(`retry:\s+retryEvery`)
+	if !timeoutRe.MatchString(src) || !retryRe.MatchString(src) {
 		t.Fatal("newBridge 没把那两个节拍接到真客户端上")
 	}
 }

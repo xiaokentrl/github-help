@@ -25,12 +25,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("界面起不来: %v", err)
 	}
-	if socketPath == "" {
-		p, err := ipc.Endpoint()
+	var endpoints []string
+	if socketPath != "" {
+		endpoints = []string{socketPath}
+	} else {
+		// 权限模型定档（2026-10-25）：服务多半以 root 常驻在 /run/github-accel，
+		// 开发者自跑的那一份在自己运行时目录——两条都作候选，桥那一侧每拍都重试。
+		ps, err := ipc.DialEndpoints()
 		if err != nil {
 			log.Fatalf("界面起不来: %v", err)
 		}
-		socketPath = p
+		endpoints = ps
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
@@ -47,7 +52,7 @@ func main() {
 		OnShutdown: stop,
 	})
 
-	br := newBridge(socketPath, func(name string, data any) { app.Event.Emit(name, data) })
+	br := newBridge(endpoints, func(name string, data any) { app.Event.Emit(name, data) })
 	// 界面→壳这一句必须开 goroutine：一次调用最长等 10 秒，占着事件分发就会把后面所有点击一起卡住。
 	// 回执自己带 id，所以几条同时在飞也不会对错人。
 	app.Event.On(contract.WireInvoke, func(e *application.CustomEvent) {

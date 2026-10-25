@@ -58,6 +58,7 @@ type caller interface {
 	Connect(path string) error
 	Close() error
 	IsConnected() bool
+	ActiveEndpoint() string
 	Call(method string, params map[string]any, timeout time.Duration) (any, error)
 	Events() <-chan contract.Event
 	Dropped() int64
@@ -68,10 +69,10 @@ type caller interface {
 
 // bridge 手里只有这一条连接，所以 Events() 的消费者天生只有一个（客户端那边写明只许一个）。
 type bridge struct {
-	endpoint string
-	client   caller
-	timeout  time.Duration
-	retry    time.Duration
+	endpoints []string
+	client    caller
+	timeout   time.Duration
+	retry     time.Duration
 
 	// emit 把一句话递给窗口。真壳里它就是 app.Event.Emit，测试里换成一张收集名单。
 	emit func(name string, data any)
@@ -86,19 +87,19 @@ type bridge struct {
 	dropped   int64
 }
 
-func newBridge(endpoint string, emit func(name string, data any)) *bridge {
+func newBridge(endpoints []string, emit func(name string, data any)) *bridge {
 	known := make(map[string]bool, len(contract.AllMethods))
 	for _, m := range contract.AllMethods {
 		known[m] = true
 	}
 	return &bridge{
-		endpoint: endpoint,
-		client:   ipc.NewClient(),
-		timeout:  callTimeout,
-		retry:    retryEvery,
-		emit:     emit,
-		logf:     log.Printf,
-		known:    known,
+		endpoints: endpoints,
+		client:    ipc.NewClient(),
+		timeout:   callTimeout,
+		retry:     retryEvery,
+		emit:      emit,
+		logf:      log.Printf,
+		known:     known,
 	}
 }
 
@@ -126,6 +127,17 @@ func (b *bridge) handleInvoke(raw any) {
 	b.emit(contract.WireReply, b.reply(reply))
 }
 
+// currentEndpoint 给状态栏那一格"连的是哪条线"：连着的那条优先；一条都没连上就报第一条候选。
+func (b *bridge) currentEndpoint() string {
+	if ep := b.client.ActiveEndpoint(); ep != "" {
+		return ep
+	}
+	if len(b.endpoints) > 0 {
+		return b.endpoints[0]
+	}
+	return ""
+}
+
 // reply 给每一条回执补上发这一句这一侧的契约版本号。
 // 干什么用：界面拿它对一句"你这份界面与外壳不是同一轮构建的"——这一档不写出来，
 // 旧界面配新壳只会表现成某一行永远空着且不报错，正是这批账里最难查的那一种。
@@ -147,7 +159,15 @@ func (b *bridge) Run(ctx context.Context) {
 				// 不说会怎样：按钮每一个都回一句"连不上"，而状态栏还挂着"在跑"——人只会以为工具自己坏了。
 				b.setState(false, errLinkDropped)
 			}
-			if err := b.client.Connect(b.endpoint); err != nil {
+			// 权限模型定档（2026-10-25）后服务可能以 root 常驻在 /run/github-accel，
+			// 也可能是开发者自己跑的那一份；每拍都把候选从头试一遍，不记住上一次连的是谁。
+			var err error
+			for _, ep := range b.endpoints {
+				if err = b.client.Connect(ep); err == nil {
+					break
+				}
+			}
+			if err != nil {
 				b.setState(false, err)
 			} else {
 				b.setState(true, nil)
@@ -189,7 +209,7 @@ func (b *bridge) setState(connected bool, err error) {
 	}
 	b.connected = connected
 	b.lastErr = text
-	frame := contract.LinkState{Connected: connected, Endpoint: b.endpoint, Err: text, Dropped: b.client.Dropped()}
+	frame := contract.LinkState{Connected: connected, Endpoint: b.currentEndpoint(), Err: text, Dropped: b.client.Dropped()}
 	b.emit(contract.WireState, frame)
 }
 

@@ -20,11 +20,12 @@ import (
 // 症状是服务那 5 条事件全推给了空气——进度条永远不动、队列跑完了界面还停在原地，而且一个字也不报。
 // 现在改成**一条线只有一个读的人**：回执按 id 交回等它的那次调用，事件交给 Events() 那一个出口。
 type Client struct {
-	mu   sync.Mutex
-	conn net.Conn
-	dec  *decoder
-	enc  *encoder
-	next int64
+	mu       sync.Mutex
+	conn     net.Conn
+	endpoint string
+	dec      *decoder
+	enc      *encoder
+	next     int64
 
 	// pending 是"这次调用还在等哪一条 id 的回执"。读的人只管照 id 投递，谁等谁自己收。
 	pending map[int64]chan *contract.Response
@@ -64,6 +65,7 @@ func (c *Client) Connect(path string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrNoConnection, err)
 	}
+	c.endpoint = path
 	c.conn = conn
 	c.dec = newDecoder(conn)
 	c.enc = newEncoder(conn)
@@ -87,6 +89,13 @@ func (c *Client) closeLocked() error {
 	c.dec = nil
 	c.enc = nil
 	return err
+}
+
+// ActiveEndpoint 回"此刻连的是哪一条"：没连上就是空串。状态栏"连的是哪条线"那一格读它。
+func (c *Client) ActiveEndpoint() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.endpoint
 }
 
 // IsConnected 只回答一件事：现在这条线在不在。

@@ -60,7 +60,8 @@ Section: utils
 Priority: optional
 Description: GitHub 加速助手（改 hosts 指向更可用的 IP）
   两个可执行文件：界面壳 $PKG-gui 不带权限，常驻后台 $PKG-service 是唯一被允许写 hosts 的那一个，
-  两者之间走本机 AF_UNIX 端点（权限当场 0600，并用 SO_PEERCRED 核对端 UID）。
+  两者之间走本机 AF_UNIX 端点〔权限模型已定 2026-10-25：服务以 root 常驻，root 态端点 0666、
+  对端只核"本机来的"〕。
   构建线：-tags gtk3（GTK3 + webkit2gtk-4.1）。不签名〔已定：A7乙〕。
   本包只摆文件：不带 systemd 单元、不带 postinst／prerm／postrm，装它不会启动常驻进程、不会改 hosts；
   服务装卸那一半按规划还等规格书（技术方案第 13 节 M5 那一格）。
@@ -81,7 +82,7 @@ echo "版本 $VERSION／构建时间 $BUILD_DATE 已注进 service（界面「�
 echo
 cat <<'EOF'
 
-交底：本包不带服务装卸。原因：代码里 ipc.CheckPeer 只放「同 UID 或 root 来连」，
-      root 跑的服务会把普通权限的界面拒在门外，「装/卸载服务进步规格书」那条还挂着，
-      所以单元文件等权限模型拍了再写。deb／rpm／AppImage／Windows 四条线的取号入口都在 make。
+交底：本包不带服务装卸（单元与装卸脚本还没建——权限模型已定 2026-10-25：服务以 root
+      常驻、端点在 /run/github-accel，界面普通权限来连；单元文件这一步等点名再动）。
+      deb／rpm／AppImage／Windows 四条线的取号入口都在 make。
 EOF
