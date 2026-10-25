@@ -7,7 +7,7 @@
    怎么回来：真源是 internal/contract/contract.go。frontend/tests/contract.test.mjs 每次现读那一份源码，
              把下面三个名单逐字比对，少一条、多一条、改一个字都当场红。 */
 
-/** 契约里那 16 个方法（值＝Go 侧 Method* 常量的值）。 */
+/** 契约里那 17 个方法（值＝Go 侧 Method* 常量的值）。 */
 export const METHODS = {
   getStatus: 'GetStatus',
   detect: 'Detect',
@@ -24,7 +24,8 @@ export const METHODS = {
   pauseQueue: 'PauseQueue',
   resumeQueue: 'ResumeQueue',
   getSnapshot: 'GetSnapshot',
-  clearTasks: 'ClearTasks'
+  clearTasks: 'ClearTasks',
+  openURL: 'OpenURL'
 };
 
 /** 壳与页面之间那三条线（值＝Go 侧 Wire* 常量的值）。业务事件那 5 条不在这里，家在 contract/events.js。 */
@@ -40,4 +41,4 @@ export const WIRE = {
     会错在哪：Go 那边推了版本号、这里没跟着推：每一次调用都判成"版本不对"，界面全线点不动（有声，好查）；
               反过来这里独自推号：判成"对得上"，缺的那一栏却永远空着（无声，难查）。
     怎么回来：改 internal/contract/contract.go 的 ProtocolVersion 那一轮，同轮改这里这一个数。 */
-export const EXPECTED_PROTOCOL = 9;
+export const EXPECTED_PROTOCOL = 10;

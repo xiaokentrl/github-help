@@ -1,5 +1,5 @@
 /* 界面发问的唯一出口。干什么用：全项目只有这一层把"人点了什么"翻成契约里那 16 个方法名之一，
-   再由 core/api/wire.js 送出去；外面（core/flows.js、main.js）只准叫这里的动词，不准碰方法名字符串。
+   再由 core/api/wire.js 送出去；外面（core/flows.js、main.js、views/settings）只准叫这里的动词，不准碰方法名字符串。
    会错在哪：① 别处直接 wire.call('Detect') 或写 window.go.xxx＝同一个方法名长了第二个家，
                 契约改了只改得动一处，症状是那颗按钮点下去回一句 GAC-IPC-011（看着像"服务没这个功能"）。
              ② 参数键名漂了不报错：服务把缺的键当"没给"，Detect 少了 itemIDs 就变成"全部检测"，
@@ -56,6 +56,10 @@ export const api = {
   restoreHosts: () => call('restoreHosts', {}),
 
   /* ---- 队列的三只手 ---- */
+
+  /** 契约 OpenURL，收 {url}；服务那侧的守卫只放 http(s)。成功回 {opened:true}，
+      打不开（scheme 不对／打开器没跑成）回 GAC-IPC-013，调用点拿码去语言文件换句子 */
+  openURL: url => call('openURL', { url }),
 
   /** 契约 CancelTask，收 {taskID}；不填＝撤掉所有等待中的行（顶部那颗「取消等待」） */
   cancelTask: taskID => call('cancelTask', taskID ? { taskID } : {}),

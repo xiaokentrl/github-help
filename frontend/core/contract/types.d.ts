@@ -143,6 +143,11 @@ export interface TaskIDReply {
 }
 
 /** CancelTask 的回执：只有等待中的能取消；count 是这一次实际取消掉几条 */
+/** OpenURL 的回执：命令交给系统打开器了就是 true（窗口在用户那侧，服务只认得"交出去了"）。 */
+export interface OpenURLReply {
+  opened: boolean;
+}
+
 export interface CancelReply {
   cancelled: boolean;
   count: number;

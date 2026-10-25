@@ -489,9 +489,10 @@ export default {
   'settings.about.rowCurrent': '当前版本',                                 // :1023
   'settings.about.rowBuild': '构建日期',                                   // :1024
   'settings.about.rowDataDir': '数据目录',                                  // :1026
-  'settings.about.toastRepo': '打开项目主页（模拟）',                        // :1717
-  'settings.about.toastFeedback': '打开反馈页面（模拟）',                    // :1718
-  'settings.about.toastLicense': '打开许可协议（模拟）',                     // :1719
+  'settings.about.openFail': '没打开成',
+  'settings.about.toastRepo': '正在打开项目主页…',                       // 2026-10-25 接真:OpenURL'
+  'settings.about.toastFeedback': '正在打开反馈页面…',                     // 2026-10-25 接真:OpenURL'
+  'settings.about.toastLicense': '正在打开许可协议页面…',                   // 2026-10-25 接真:OpenURL'
 
   /* ==== 「选择主题」那六张卡的弹窗（views/theme-picker，原型 :1039-1051） ====
      卡上的名字与简介不在这里——它们住在 styles/themes/<id>/theme.js 那一份里，卡片直接读它。 */

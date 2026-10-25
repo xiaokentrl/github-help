@@ -79,6 +79,8 @@ type Config struct {
 	Modes ModeSource
 	// Flusher 是刷本机 DNS 那一步，留空用 dnsflush.New()。
 	Flusher dnsflush.Flusher
+	// Opener 是"打开外部页面"那一步，留空用 opener.go 的系统打开器。用例传假件记 URL，不真拉浏览器。
+	Opener Opener
 	// Broadcaster 是事件出口，留空就是不往外推（cmd 侧没建通道时的形状）。
 	Broadcaster Broadcaster
 	// HostsPath 只给权限自检那一句话用（写不写得动问的是路径，不是引擎）。留空取 hosts.DefaultPath()。

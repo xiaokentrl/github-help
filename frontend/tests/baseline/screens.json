@@ -1,7 +1,7 @@
 {
  "meta": {
   "kind": "screens",
-  "takenAt": "2026-10-25T03:12:56Z",
+  "takenAt": "2026-10-25T03:24:58Z",
   "viewport": {
    "w": 988,
    "h": 772,
@@ -121,9 +121,9 @@
   },
   "展开后还剩几个折叠": 0,
   "schema": 1,
-  "pinnedAt": "2026-10-25T03:16:00Z",
+  "pinnedAt": "2026-10-25T03:27:46Z",
   "sources": {
-   "hash": "696ad19317358a59a808a962b5f0264d73cff436a3223248acd27296d861f9b6",
+   "hash": "0c96dcf691f61c96a965ac3d5a80fd7db053af092963fb06f25267142e276e80",
    "files": 122,
    "prototypeBytes": 163494
   }
@@ -1324,7 +1324,7 @@
      "h": 3
     },
     "visible": true,
-    "opacity": 0.576468,
+    "opacity": 0.924766,
     "zIndex": "30",
     "position": "absolute"
    },
@@ -1544,8 +1544,8 @@
      "family": "system-ui"
     },
     "fg": "37,99,235,1",
-    "bg": "255,255,255,1",
-    "contrast": 5.17
+    "bg": "234,240,254,0.85",
+    "contrast": 4.53
    },
    "域名行": {
     "id": "域名行",

@@ -12,6 +12,7 @@ const (
 	CodeIPCPeer       = "GAC-IPC-010" // 对端身份核不过
 	CodeIPCNoHandler  = "GAC-IPC-011" // 服务不认这个方法
 	CodeIPCHandler    = "GAC-IPC-012" // 方法跑挂了（码由 handler 的错误决定，这是兜底）
+	CodeIPCOpenURL    = "GAC-IPC-013" // 链接打不开：scheme 不是 http(s)，或系统打开器交不出去
 	CodeIPCRuntimeDir = "GAC-IPC-020" // 建不出运行时目录
 	CodeIPCStale      = "GAC-IPC-023" // 旧端点清不掉
 	CodeIPCListen     = "GAC-IPC-021" // 监听失败

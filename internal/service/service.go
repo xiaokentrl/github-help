@@ -92,6 +92,9 @@ func New(cfg Config) *Service {
 	if cfg.Flusher == nil {
 		cfg.Flusher = dnsflush.New()
 	}
+	if cfg.Opener == nil {
+		cfg.Opener = defaultOpener
+	}
 	if cfg.HostsPath == "" {
 		cfg.HostsPath = hosts.DefaultPath()
 	}

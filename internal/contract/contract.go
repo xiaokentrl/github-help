@@ -35,6 +35,7 @@ const (
 	MethodResumeQueue    = "ResumeQueue"
 	MethodGetSnapshot    = "GetSnapshot"
 	MethodClearTasks     = "ClearTasks"
+	MethodOpenURL        = "OpenURL"
 )
 
 // AllMethods 是上面那 16 条的清单本身。为什么要有一份切片而不只有一批常量：
@@ -44,7 +45,7 @@ var AllMethods = []string{
 	MethodGetStatus, MethodDetect, MethodApplyQueue, MethodRestoreItem, MethodRestoreHosts,
 	MethodGetSettings, MethodSaveSettings, MethodCheckPerm, MethodCheckUpdate,
 	MethodDownloadUpdate, MethodGetVersion, MethodCancelTask, MethodPauseQueue, MethodResumeQueue,
-	MethodGetSnapshot, MethodClearTasks,
+	MethodGetSnapshot, MethodClearTasks, MethodOpenURL,
 }
 
 // 事件名。服务往界面推的这些名字，两侧必须逐字一致。
@@ -106,7 +107,10 @@ var AllEvents = []string{
 // 9＝给 State 补 lastErrorCode／lastErrorParams 两栏，补的是同一笔账的第三处断链（前两处＝Item 那两栏、Task 那两栏）：
 // 状态栏那一句（本轮上限到了"剩下的排队"、读不到 hosts、刷 DNS 没成）此前只有 lastError 一句原文，
 // 而它正是队列那一行同一个失败的第二次出声——行上换了语言、状态栏还是中文，一句话两种说法在一屏之内。
-const ProtocolVersion = 9
+// 10＝加 OpenURL（第 17 个方法）：「关于我们」那三颗入口钮从原型阶段的"回执一句（模拟）"接成真的——
+// 打开外部页面是"从界面发一句话、由真开网页的那一侧执行"，与改 hosts 同走一条契约通道，
+// 由服务用系统打开器执行（argv 直传、不经 shell；scheme 只认 http／https）。
+const ProtocolVersion = 10
 
 const (
 	// ServiceRunning 表示服务在线、可以接活。
@@ -321,6 +325,12 @@ type CancelReply struct {
 // QueueReply 是 PauseQueue／ResumeQueue 的回执：回的是闸此刻的状态，不是"这次调用改了什么"。
 // 为什么两个方法共用一份形状：暂停一个已经暂停的队列、恢复一个没暂停的队列都不该报错，
 // 也不该回一个反过来的值——界面那颗按钮照这个数翻转文字（原型 :3106-3115 就是这么干的）。
+// OpenURLReply 是 OpenURL 的回执：命令交给系统打开器了就是 true。
+// 为什么不给"浏览器真的开了"这一格：窗口在用户那一侧，服务只认得"交出去了"。
+type OpenURLReply struct {
+	Opened bool `json:"opened"`
+}
+
 type QueueReply struct {
 	Paused bool `json:"paused"`
 }

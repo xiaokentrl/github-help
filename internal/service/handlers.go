@@ -47,6 +47,7 @@ func (s *Service) Register(h *ipc.Server) {
 	h.Register(contract.MethodResumeQueue, s.hResumeQueue)
 	h.Register(contract.MethodGetSnapshot, s.hGetSnapshot)
 	h.Register(contract.MethodClearTasks, s.hClearTasks)
+	h.Register(contract.MethodOpenURL, s.hOpenURL)
 }
 
 // registeredMethods 把注册表读出来给门禁 G3 用：它要的是"实际挂上去的名字"，不是"代码里写了几行 Register"。
@@ -70,6 +71,7 @@ func (s *Service) registeredMethods() map[string]ipc.Handler {
 		contract.MethodResumeQueue:    s.hResumeQueue,
 		contract.MethodGetSnapshot:    s.hGetSnapshot,
 		contract.MethodClearTasks:     s.hClearTasks,
+		contract.MethodOpenURL:        s.hOpenURL,
 	}
 }
 
@@ -247,4 +249,19 @@ func picksParam(params map[string]any, key string) map[string]string {
 		return nil
 	}
 	return out
+}
+
+// hOpenURL 收 {url}：让系统把这条链接打开（「关于我们」那三颗入口钮）。
+// 会错在哪：URL 不合法当场拒（opener.go 那道门卫，scheme 只认 http/https）；
+// 打开器跑了但浏览器没起，服务这边如实回错——界面那半句"没打开成"的话有料可说。
+func (s *Service) hOpenURL(params map[string]any) (any, error) {
+	u := stringParam(params, "url")
+	if err := validateOpenURL(u); err != nil {
+		return nil, err
+	}
+	if err := s.cfg.Opener(u); err != nil {
+		return nil, errs.New(errs.CodeIPCOpenURL, map[string]any{"url": u},
+			"打开器交不出去这一句：%v", err)
+	}
+	return contract.OpenURLReply{Opened: true}, nil
 }

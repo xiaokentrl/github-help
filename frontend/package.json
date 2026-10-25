@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "GitHub 加速助手的前端（Wails 壳里的 webview 加载这一份；数据只来自 core/api/client.js 那 16 个契约方法与其事件）",
+  "description": "GitHub 加速助手的前端（Wails 壳里的 webview 加载这一份；数据只来自 core/api/client.js 那 17 个契约方法与其事件）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
