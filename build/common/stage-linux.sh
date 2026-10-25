@@ -41,17 +41,23 @@ echo "$LINKED" | grep -q 'webkit2gtk-4\.1' || die "$BIN_GUI 没链 libwebkit2gtk
 echo "$LINKED" | grep -q 'webkitgtk-6\.0' && die "$BIN_GUI 链到了 webkitgtk-6.0（＝漏了 -tags $TAGS），这台机器上能跑、换机器就炸" || true
 echo "$LINKED" | grep -Eo 'libgtk-3\.so[^ ]*|libwebkit2gtk[^ ]*' | sort -u
 
-say "stage 摆 /usr/bin 软链与桌面入口（三种格式共用）"
-mkdir -p "$STAGE/usr/bin" "$STAGE/usr/share/applications"
+say "stage 摆 /usr/bin 软链、桌面入口与图标（三种格式共用）"
+mkdir -p "$STAGE/usr/bin" "$STAGE/usr/share/applications" \
+         "$STAGE/usr/share/icons/hicolor/256x256/apps"
 ln -sf "/opt/$PKG/$PKG-gui" "$STAGE/usr/bin/$PKG-gui"
 ln -sf "/opt/$PKG/$PKG-service" "$STAGE/usr/bin/$PKG-service"
+# 桌面入口必须有 Icon= 且图标文件必须进 hicolor——缺了菜单里就是灰色占位（deb/rpm 首版实测）。
+python3 "$ROOT/build/common/make-icon.py" \
+  "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"
 cat >"$STAGE/usr/share/applications/$PKG.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=GitHub 加速助手
 Comment=把 GitHub 相关域名指到更可用的 IP（改 hosts 的动作全在后台服务那一侧）
 Exec=$PKG-gui
+Icon=$PKG
 Terminal=false
 Categories=Utility;Network;
 EOF
-chmod 0644 "$STAGE/usr/share/applications/$PKG.desktop"
+chmod 0644 "$STAGE/usr/share/applications/$PKG.desktop" \
+  "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"

@@ -44,12 +44,14 @@ mkdir -p %{buildroot}/opt/$PKG %{buildroot}/usr/bin %{buildroot}/usr/share/appli
 cp -a %{gac_stage}/opt/$PKG/.            %{buildroot}/opt/$PKG/
 cp -a %{gac_stage}/usr/bin/.              %{buildroot}/usr/bin/
 cp -a %{gac_stage}/usr/share/applications/. %{buildroot}/usr/share/applications/
+cp -a %{gac_stage}/usr/share/icons/.      %{buildroot}/usr/share/icons/
 
 %files
 /opt/$PKG
 /usr/bin/$PKG-gui
 /usr/bin/$PKG-service
 /usr/share/applications/$PKG.desktop
+/usr/share/icons/hicolor/256x256/apps/$PKG.png
 EOF
 
 # stage 树挂进 rpmbuild：本机跑给真路径，容器跑给 /stage。rpm 会自己对 buildroot 里的
