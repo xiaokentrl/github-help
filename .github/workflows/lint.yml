@@ -1,0 +1,38 @@
+# Lint 门禁：Go 格式 + 工作流自检（runner 与 actions 口径同 ci.yml）。
+#
+# 说明：go vet 已在 ci.yml 作为阻断门禁，这里不重复挂第二份——本项目没有引入
+#   golangci-lint（phpo 那份是外部二进制、版本与其所用 Go 的 export data 强绑，
+#   本项目基线也未清过，现在挂上去只会是一片红），静态检查先由 go vet 独自守着。
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gofmt:
+    name: gofmt check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27"
+
+      - name: gofmt check
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then echo "需要 gofmt 的文件:"; echo "$out"; exit 1; fi
+
+  workflow-lint:
+    name: actionlint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: reviewdog/action-actionlint@v1

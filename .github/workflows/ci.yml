@@ -1,0 +1,101 @@
+# CI 主链路：Go 构建 + 全量单测 + Windows 交叉编译 + 前端测试与构建 + 六份文档锚点/门牌校验
+#
+# 与 phpo 的 ci.yml 同一套 runner 与 actions 口径（checkout v5 / setup-go v6 / setup-node v6，
+# node20 运行时已被 actionlint 判弃用），工具链口径则按本项目已拍的 A2乙 走 GTK3 一路：
+#   本项目全部检查号都带 `-tags gtk3`，对应 pkg-config: gtk+-3.0 + webkit2gtk-4.1，
+#   故 runner 装 libgtk-3-dev / libwebkit2gtk-4.1-dev（ubuntu-24.04 自带 4.1 源）。
+#   若哪条检查漏了 tag，在这台装了 webkitgtk-6.0 的机器上照样能编过、能骗过所有人——
+#   所以这里每条 go 命令都写死 tag，让"漏 tag"在云端当场红，而不是换台机器才红。
+#
+# 前端测试是 node:test 纯逻辑（不 import vite、不碰 DOM），`node --test` 直接跑、零依赖；
+# vite build 单独一步，验证的是产物能否干净出包（dist/ 被 gitignore，不进仓库）。
+#
+# 文档校验两把脚本（tools/verify-anchors.py / verify-xrefs.py）的仓库根默认写死本机路径，
+# 必须用 ANCHOR_ROOT / XREF_ROOT 指向 $GITHUB_WORKSPACE 覆盖，否则在 runner 上读不到文件、恒红。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.27"
+  NODE_VERSION: "24"
+
+jobs:
+  go:
+    name: Go build & test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install GTK3 / webkit2gtk toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev \
+            build-essential pkg-config
+
+      - name: Build (-tags gtk3)
+        run: go build -tags gtk3 ./...
+
+      - name: Vet (-tags gtk3)
+        run: go vet -tags gtk3 ./...
+
+      - name: Test (-tags gtk3)
+        run: go test -tags gtk3 ./...
+
+      # 与本机检查号同一口径：Windows 一路纯 Go 交叉编译（cgo 关闭，gtk 文件不参与）。
+      # 平台专属 API 在 Linux 上恒绿，红了要等换机器才看见就太晚了。
+      - name: Cross-compile (windows)
+        run: GOOS=windows go build ./...
+
+  frontend:
+    name: Frontend test & build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Test (node --test)
+        run: node --test tests/*.test.mjs
+
+      - name: Build (vite)
+        run: npm run build
+
+  docs:
+    name: Doc anchors & xrefs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      # 锚点与门牌的仓库根默认写死作者本机路径，runner 上必须用环境变量盖掉，
+      # 否则脚本读不到六份文档、恒红（两份脚本各自的文件头写了这一条）。
+      - name: Verify anchors
+        run: python3 tools/verify-anchors.py
+        env:
+          ANCHOR_ROOT: ${{ github.workspace }}
+
+      - name: Verify xrefs
+        run: python3 tools/verify-xrefs.py
+        env:
+          XREF_ROOT: ${{ github.workspace }}
