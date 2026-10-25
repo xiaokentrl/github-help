@@ -1,15 +1,47 @@
-# 顶层 Makefile：常用入口的薄壳，真正的活儿在各自的脚本/工具里（口径同 phpo 顶层 Makefile）。
-# 出包命令全拼是 bash build/linux/make-deb.sh <版本>；这里的 package 把它收短，
-# 版本号不传就用默认（与脚本里的默认同一个号，不抄第二份——脚本自己兜底）。
+# 顶层 Makefile：常用入口的薄壳，真正的活儿在各自的脚本里（口径同 phpo 顶层 Makefile）。
+# 版本号只有一个家：仓库根 VERSION 文件，存「下一个要打的号」。取号与推格都只发生在这里——
+#   不带 VERSION 出包 → 从文件取号，**全部包打成之后**推一格（包打成＝set -e 全程没红）；
+#   带 VERSION=x      → 四条线都用 x，打完文件照常推进到「x 的下一格」，保证自动号不撞车。
+#   （推格放在 recipe 最后一行，前面的打包脚本任何一个失败，make 当场停，号不会被白白消耗。）
+# 四种包：deb／rpm／AppImage（build/linux/）与 Windows zip（build/windows/）。
+#   `make package` 一条龙用同一个号出四件；要单出某一种就 make deb / rpm / appimage / win。
+SHELL := /bin/bash
 
-VERSION ?=
+VERSION_FILE := VERSION
+ifeq ($(strip $(VERSION)),)
+CURVER := $(shell cat $(VERSION_FILE) 2>/dev/null || echo 0.0.0-m5)
+else
+CURVER := $(VERSION)
+endif
+NEXTVER := $(shell v='$(CURVER)'; [[ $$v =~ ^(.*[^0-9])([0-9]+)$$ ]] \
+	&& printf '%s%d' "$${BASH_REMATCH[1]}" "$$(( $${BASH_REMATCH[2]} + 1 ))" \
+	|| printf '%s.1' "$$v")
 
-.PHONY: package frontend build test vet fmt clean
+.PHONY: package deb rpm appimage win frontend build test vet fmt check clean
 
-# 出 deb 包：make package            → 用脚本默认版本
-#           make package VERSION=0.0.0-m6
 package:
-	bash build/linux/make-deb.sh $(VERSION)
+	bash build/linux/make-deb.sh $(CURVER)
+	bash build/linux/make-rpm.sh $(CURVER)
+	bash build/linux/make-appimage.sh $(CURVER)
+	bash build/windows/make-win.sh $(CURVER)
+	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
+	@echo "下一个版本号已写进 $(VERSION_FILE)：$(NEXTVER)"
+
+deb:
+	bash build/linux/make-deb.sh $(CURVER)
+	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
+
+rpm:
+	bash build/linux/make-rpm.sh $(CURVER)
+	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
+
+appimage:
+	bash build/linux/make-appimage.sh $(CURVER)
+	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
+
+win:
+	bash build/windows/make-win.sh $(CURVER)
+	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
 
 # 前端依赖与产物（首次 / 依赖变了才需要）
 frontend:
