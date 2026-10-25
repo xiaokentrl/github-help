@@ -45,7 +45,7 @@ DEPS=$(sed -n 's/^shlibs:Depends=//p' "$DEPS_FILE")
 [ -n "$DEPS" ] || die "算出来的依赖是空的——那说明 ldd 没量到东西，别出这个包"
 echo "Depends: $DEPS"
 
-say "deb ② 摆 control／md5sums"
+say "deb ② 摆 control／装卸脚本／md5sums"
 ARCH=$(dpkg --print-architecture)
 mkdir -p "$STAGE/DEBIAN"
 SIZE=$(du -sk "$STAGE" --exclude=DEBIAN | cut -f1)
@@ -59,13 +59,44 @@ Depends: $DEPS
 Section: utils
 Priority: optional
 Description: GitHub 加速助手（改 hosts 指向更可用的 IP）
-  两个可执行文件：界面壳 $PKG-gui 不带权限，常驻后台 $PKG-service 是唯一被允许写 hosts 的那一个，
-  两者之间走本机 AF_UNIX 端点〔权限模型已定 2026-10-25：服务以 root 常驻，root 态端点 0666、
-  对端只核"本机来的"〕。
+  两个可执行文件：界面壳 $PKG-gui 不带权限，常驻后台 $PKG-service 以 root 跑、是唯一被允许写 hosts 的那一个，
+  两者之间走本机 AF_UNIX 端点〔权限模型已定 2026-10-25：服务 root 常驻在 /run/github-accel，对端只核"本机来的"〕。
   构建线：-tags gtk3（GTK3 + webkit2gtk-4.1）。不签名〔已定：A7乙〕。
-  本包只摆文件：不带 systemd 单元、不带 postinst／prerm／postrm，装它不会启动常驻进程、不会改 hosts；
-  服务装卸那一半按规划还等规格书（技术方案第 13 节 M5 那一格）。
+  postinst 启用并启动 github-accel.service（开机常驻，装完只提权 dpkg 这一次）；
+  卸载停服务并清 /run/github-accel 残留；配置（/root/.config/github-hlep）卸载时保留。
 EOF
+# 装卸脚本〔2026-10-25 起带上——权限模型已定,服务装卸不再是"等规格书"的挂账〕。
+# 装完只提权一次＝dpkg -i 那一次 sudo,postinst 以 root 跑 enable --now,不再要任何口令;
+# 卸载不残留＝prerm 停服务,postrm 摘自启、清 /run/github-accel 那个 socket 目录。
+cat >"$STAGE/DEBIAN/postinst" <<'EOS'
+#!/bin/sh
+set -e
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload
+  systemctl enable github-accel.service >/dev/null || true
+  systemctl start github-accel.service || true
+fi
+EOS
+cat >"$STAGE/DEBIAN/prerm" <<'EOS'
+#!/bin/sh
+set -e
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl stop github-accel.service >/dev/null 2>&1 || true
+fi
+EOS
+cat >"$STAGE/DEBIAN/postrm" <<'EOS'
+#!/bin/sh
+set -e
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl disable github-accel.service >/dev/null 2>&1 || true
+    systemctl daemon-reload || true
+    systemctl reset-failed >/dev/null 2>&1 || true
+  fi
+  rm -rf /run/github-accel
+fi
+EOS
+chmod 0755 "$STAGE/DEBIAN/postinst" "$STAGE/DEBIAN/prerm" "$STAGE/DEBIAN/postrm"
 ( cd "$STAGE" && find . -type f ! -path './DEBIAN/*' -exec md5sum {} + | sed 's|\./||' ) >"$STAGE/DEBIAN/md5sums"
 chmod 0644 "$STAGE/DEBIAN/control" "$STAGE/DEBIAN/md5sums" "$STAGE/usr/share/applications/$PKG.desktop"
 chmod 0755 "$STAGE/DEBIAN"
@@ -82,7 +113,7 @@ echo "版本 $VERSION／构建时间 $BUILD_DATE 已注进 service（界面「�
 echo
 cat <<'EOF'
 
-交底：本包不带服务装卸（单元与装卸脚本还没建——权限模型已定 2026-10-25：服务以 root
-      常驻、端点在 /run/github-accel，界面普通权限来连；单元文件这一步等点名再动）。
+交底：本包带 systemd 常驻（github-accel.service，root，端点 /run/github-accel）。
+      postinst 装+起，prerm 停，postrm 摘自启并清 /run 残留；root 的配置目录卸载时保留。
       deb／rpm／AppImage／Windows 四条线的取号入口都在 make。
 EOF

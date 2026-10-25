@@ -61,7 +61,8 @@ export const ERROR_PARAMS = {
   'GAC-TASK-003': ['path', 'mode'],
   'GAC-TASK-004': ['itemId'],
 
-  'GAC-UPDATE-501': ['method', 'milestone'],
+  'GAC-UPDATE-502': ['latest', 'platform'],
+  'GAC-UPDATE-503': ['url'],
 
   'GAC-UNKNOWN-000': ['code', 'message']   // 兜底那一句：这两个数由本文件补，不是服务给的
 };

@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -83,8 +84,9 @@ func TestRegisterMountsEveryContractMethod(t *testing.T) {
 		if err == nil {
 			continue
 		}
-		// 只有这两句是"诚实的答不上来"，其余任何答不上来都说明方法没挂上。
-		if code := codePrefix(t, err); code != errs.CodeUpdateNotWired {
+		// 更新那两条接真（2026-10-25）后,业务上如实答不上来的一族（501 退役号／502 源连不上
+		// 或没有包／503 下载断）都算"挂上了、诚实地说不行"；其余任何答不上来都说明方法没挂上。
+		if code := codePrefix(t, err); !strings.HasPrefix(code, "GAC-UPDATE-") {
 			t.Errorf("方法 %s 问下去回的是 %q（%v）：契约里有这一条，注册表就该有", call.method, code, err)
 		}
 	}
@@ -266,18 +268,89 @@ func TestSaveSettingsRoundTrip(t *testing.T) {
 
 // 没接线的两条一律如实回 501，而且不许带 taskID——
 // 带一个任务号的话界面会开始等一条永远不会来的事件。
+// 更新通道接真（2026-10-25）后的用例：取数口全是假件,不把用例挂到真网络上。
+// 钉四件事:① 有新版时如实报 latest/hasUpdate/log；② 没新版时拒绝下载并说"已是最新"；
+// ③ 下载真落盘且回路径；④ 源连不上时报 GAC-UPDATE-502,不许演成功（旧桩那条"不许演成功"的口径不变）。
 func TestUpdateHandlersRefuseToPretend(t *testing.T) {
 	st := newStack(t)
-	for _, one := range []struct {
-		name string
-		err  error
-	}{{"CheckUpdate", mustFail(t, st.svc.hCheckUpdate)}, {"DownloadUpdate", mustFail(t, st.svc.hDownloadUpdate)}} {
-		code := errs.CodeOf(one.err)
-		if code != errs.CodeUpdateNotWired {
-			t.Fatalf("%s 留的码是 %q，要的是 GAC-UPDATE-501", one.name, code)
-		}
-		if p := errs.ParamsOf(one.err); p["milestone"] != "M5" {
-			t.Fatalf("%s 没说清这一站是哪个里程碑：%v", one.name, p)
+	st.svc.cfg.Version = "0.0.0-m24"
+	release := `{"tag_name":"v0.0.0-m25","body":"## English\n- one\n- two\n","assets":[{"name":"github-accel_0.0.0-m25_amd64.deb","browser_download_url":"https://example.com/github-accel_0.0.0-m25_amd64.deb"}]}`
+	fake := &fakeUpdater{jsonBody: []byte(release)}
+	st.svc.cfg.Updater = fake
+
+	r, err := st.svc.hCheckUpdate(nil)
+	if err != nil {
+		t.Fatalf("有新版时不该报错：%v", err)
+	}
+	c := r.(contract.UpdateCheckReply)
+	if !c.HasUpdate || c.Latest != "0.0.0-m25" || len(c.Log) != 2 {
+		t.Fatalf("检查回执不对：latest=%q hasUpdate=%v log=%v", c.Latest, c.HasUpdate, c.Log)
+	}
+
+	// 下载:假件真写盘,回执给路径
+	fake.fileBytes = []byte("deb-bytes")
+	dr, err := st.svc.hDownloadUpdate(nil)
+	if err != nil {
+		t.Fatalf("下载不该报错：%v", err)
+	}
+	path := dr.(contract.UpdateDownloadReply).SavedPath
+	if filepath.Base(path) != "github-accel_0.0.0-m25_amd64.deb" {
+		t.Fatalf("回执路径不对：%q", path)
+	}
+	if b, _ := os.ReadFile(path); string(b) != "deb-bytes" {
+		t.Fatalf("落盘内容不对")
+	}
+
+	// 没有新版:拒绝下载,不许把旧包当新包装
+	fake.jsonBody = []byte(`{"tag_name":"v0.0.0-m23","body":"","assets":[]}`)
+	if _, err := st.svc.hDownloadUpdate(nil); err == nil {
+		t.Fatal("没有新版还让下载,就是骗人")
+	} else if code := errs.CodeOf(err); code != errs.CodeUpdateCheckFailed {
+		t.Fatalf("码该是 GAC-UPDATE-502，got %q", code)
+	}
+
+	// 源连不上:检查当场报 502
+	fake.err = errors.New("proxy 死了")
+	if _, err := st.svc.hCheckUpdate(nil); err == nil || errs.CodeOf(err) != errs.CodeUpdateCheckFailed {
+		t.Fatalf("源连不上该报 502，got %v", err)
+	}
+}
+
+type fakeUpdater struct {
+	jsonBody  []byte
+	fileBytes []byte
+	err       error
+}
+
+func (f *fakeUpdater) fetchJSON(string) ([]byte, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.jsonBody, nil
+}
+
+func (f *fakeUpdater) fetchToFile(url, dest string) (int64, error) {
+	if f.err != nil {
+		return 0, f.err
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return 0, err
+	}
+	if err := os.WriteFile(dest, f.fileBytes, 0o644); err != nil {
+		return 0, err
+	}
+	return int64(len(f.fileBytes)), nil
+}
+
+// compareVersions 的逐例:自家发版形状的两条规矩——点段按数字、-mN 也按数字(m9 < m24)。
+func TestCompareVersions(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want int
+	}{{"0.0.0-m25", "0.0.0-m24", 1}, {"0.0.0-m9", "0.0.0-m24", -1}, {"1.0.0", "0.9.9", 1},
+		{"0.0.0-m24", "0.0.0-m24", 0}, {"v1.2.3", "1.2.3", 0}, {"乱码", "0.0.0-m1", -1}} {
+		if got := compareVersions(c.a, c.b); got != c.want {
+			t.Fatalf("compareVersions(%q,%q)=%d，要 %d", c.a, c.b, got, c.want)
 		}
 	}
 }

@@ -95,6 +95,9 @@ func New(cfg Config) *Service {
 	if cfg.Opener == nil {
 		cfg.Opener = defaultOpener
 	}
+	if cfg.Updater == nil {
+		cfg.Updater = httpUpdater{}
+	}
 	if cfg.HostsPath == "" {
 		cfg.HostsPath = hosts.DefaultPath()
 	}

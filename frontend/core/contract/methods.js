@@ -42,4 +42,4 @@ export const WIRE = {
     会错在哪：Go 那边推了版本号、这里没跟着推：每一次调用都判成"版本不对"，界面全线点不动（有声，好查）；
               反过来这里独自推号：判成"对得上"，缺的那一栏却永远空着（无声，难查）。
     怎么回来：改 internal/contract/contract.go 的 ProtocolVersion 那一轮，同轮改这里这一个数。 */
-export const EXPECTED_PROTOCOL = 11;
+export const EXPECTED_PROTOCOL = 12;

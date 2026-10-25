@@ -84,9 +84,11 @@ const (
 	CodeTaskBadItem = "GAC-TASK-004"
 )
 
-// GAC-UPDATE-xxx：自动更新（M5 才接线，今天这三条是"如实说没接线"用的）。
+// GAC-UPDATE-xxx：自动更新〔2026-10-25 接真：数据源＝本仓库 GitHub latest release〕。
+// 501 那句"本期不提供"随接真退役,码号留档不再发;errs.AllCodes() 那份清单也不收它。
 const (
-	CodeUpdateNotWired = "GAC-UPDATE-501" // 这一站还没做，界面显示"本期不提供"，不许演成功
+	CodeUpdateCheckFailed    = "GAC-UPDATE-502" // 检查更新失败：连不上源／回执看不懂／没有可下载的包
+	CodeUpdateDownloadFailed = "GAC-UPDATE-503" // 包没下载完：网络断了或落盘失败
 )
 
 // CodeUnknown 是 CodeOf 认不出码时的兜底：宁可显示"未知错误 + 原始消息"，也不静默当成某个已知码。
@@ -107,7 +109,7 @@ func Codes() []string {
 		CodeDetectBudget, CodeDetectOffline,
 		CodePermNoWrite, CodePermFlush,
 		CodeTaskNotFound, CodeTaskFinal, CodeTaskPaused, CodeTaskBadItem,
-		CodeUpdateNotWired,
+		CodeUpdateCheckFailed, CodeUpdateDownloadFailed,
 		CodeUnknown,
 	}
 }

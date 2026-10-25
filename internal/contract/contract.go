@@ -116,7 +116,9 @@ var AllEvents = []string{
 // 0777＝本机任何用户/进程都能改 hosts,与"服务 root 常驻"（权限模型 2026-10-25 拍板）
 // 是同一条取舍线上的既定代价；下一次应用时 hosts 引擎的 temp+rename 会把原权限带回去，
 // 所以这个放开是"到下一次应用为止"的。
-const ProtocolVersion = 11
+// 12＝CheckUpdate／DownloadUpdate 接真（GAC-UPDATE-501 那两条"没接线"下岗）：
+// 数据源＝本仓库 GitHub latest release；回执 {latest,hasUpdate,log} 与 {savedPath}。
+const ProtocolVersion = 12
 
 const (
 	// ServiceRunning 表示服务在线、可以接活。
@@ -339,6 +341,20 @@ type OpenURLReply struct {
 
 // OpenHostsReply 是 OpenHosts 的回执：Mode＝实际放开的权限字面量，Opened＝系统打开器
 // 有没有真把编辑器拉起来（false＝权限已放开但没有显示会话，界面要如实说，不许画成成功）。
+// UpdateCheckReply 是 CheckUpdate 的回执：latest＝源上最新版本号（不带 v），
+// log＝release 正文里以 -/* 起头的那几行（界面"这一版更新了哪些内容"，最多 20 行）。
+type UpdateCheckReply struct {
+	Latest    string   `json:"latest"`
+	HasUpdate bool     `json:"hasUpdate"`
+	Log       []string `json:"log"`
+}
+
+// UpdateDownloadReply 是 DownloadUpdate 的回执：包落在哪。不做自动安装——
+// root 服务替用户跑 dpkg/rpm 越权了，装哪个包、什么时候装归用户。
+type UpdateDownloadReply struct {
+	SavedPath string `json:"savedPath"`
+}
+
 type OpenHostsReply struct {
 	Mode   string `json:"mode"`
 	Opened bool   `json:"opened"`

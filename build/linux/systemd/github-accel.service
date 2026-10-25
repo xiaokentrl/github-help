@@ -1,0 +1,17 @@
+[Unit]
+Description=GitHub 加速助手后台服务（唯一被允许写 hosts 的那一个）
+# 界面（github-accel-gui）随时来连,不依赖网络就绪;但检测要出网,network-online 只作顺序参考
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/github-accel/github-accel-service
+# root 常驻〔已定:2026-10-25 权限模型〕——写 /etc/hosts 本来就要这一档;端点在 /run/github-accel
+Restart=on-failure
+RestartSec=2
+# 收尾自己删 socket(main.go 那段 defer),systemd 再兜一层:停完把运行时目录也扫掉
+ExecStopPost=-/usr/bin/rm -rf /run/github-accel
+
+[Install]
+WantedBy=multi-user.target

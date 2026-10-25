@@ -61,3 +61,7 @@ Categories=Utility;Network;
 EOF
 chmod 0644 "$STAGE/usr/share/applications/$PKG.desktop" \
   "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"
+# systemd 单元(deb/rpm 用;AppImage 拼自己的 AppDir,不带这个)
+mkdir -p "$STAGE/lib/systemd/system"
+cp "$ROOT/build/linux/systemd/$PKG.service" "$STAGE/lib/systemd/system/"
+chmod 0644 "$STAGE/lib/systemd/system/$PKG.service"

@@ -32,7 +32,7 @@ func TestMethodListIsTheFrozenEighteen(t *testing.T) {
 	// 加了方法必须同时把版本号推上去，否则握手那一步拦不住新旧两侧。
 	// 这里钉的是"这一份 16 条清单是哪一档定下的"：v7、v8、v9 三档都没加方法、只补了字段，
 	// 所以钉的数字跟着版本号走，而"加一条方法不动版本号"照样会在这里红。
-	if ProtocolVersion != 11 {
+	if ProtocolVersion != 12 {
 		t.Fatalf("清单里已经有 %d 个方法，ProtocolVersion 却还是 %d", len(want), ProtocolVersion)
 	}
 	if len(AllMethods) != len(want) {

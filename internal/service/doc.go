@@ -81,6 +81,9 @@ type Config struct {
 	Flusher dnsflush.Flusher
 	// Opener 是"打开外部页面"那一步，留空用 opener.go 的系统打开器。用例传假件记 URL，不真拉浏览器。
 	Opener Opener
+	// Updater 是"检查更新／下载更新"那两步的取数口，留空用 update.go 的真 http。
+	// 用例传假件：检查喂固定 JSON，下载真写盘——更新这一路不许把用例挂到真网络上。
+	Updater updater
 	// Broadcaster 是事件出口，留空就是不往外推（cmd 侧没建通道时的形状）。
 	Broadcaster Broadcaster
 	// HostsPath 只给权限自检那一句话用（写不写得动问的是路径，不是引擎）。留空取 hosts.DefaultPath()。

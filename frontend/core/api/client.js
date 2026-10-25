@@ -74,7 +74,10 @@ export const api = {
   /** 契约 ClearTasks：抹掉跑完的那几行，回抹完之后那一份完整快照（与 GetSnapshot 同一条合并路径） */
   clearTasks: () => call('clearTasks', {}),
 
-  /** 契约 CheckUpdate／DownloadUpdate：服务那边这一档如实回一句"本期不提供"（GAC-UPDATE-501），
+  /** 契约 CheckUpdate／DownloadUpdate：2026-10-25 起走真更新源（本仓库 GitHub latest release）。
+      检查回 {latest,hasUpdate,log}；下载回 {savedPath}（不做自动安装）。连不上源/没有包回 GAC-UPDATE-502，
+      下载中断回 GAC-UPDATE-503（501 那句"本期不提供"退役）。慢网上下载那一步 GUI 可能先到 12 秒超时,
+      而服务那边的下载会继续跑完、文件照样落进 updates/ ——如实交底,
       这里不替它编进度。 */
   checkUpdate: () => call('checkUpdate', {}),
   downloadUpdate: () => call('downloadUpdate', {}),

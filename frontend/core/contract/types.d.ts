@@ -143,6 +143,18 @@ export interface TaskIDReply {
 }
 
 /** CancelTask 的回执：只有等待中的能取消；count 是这一次实际取消掉几条 */
+/** UpdateCheck 的回执：latest＝源上最新版本号；log＝release 正文的条目行（最多 20 行）。 */
+export interface UpdateCheckReply {
+  latest: string;
+  hasUpdate: boolean;
+  log: string[];
+}
+
+/** UpdateDownload 的回执：包落在哪（不做自动安装,装不装归用户）。 */
+export interface UpdateDownloadReply {
+  savedPath: string;
+}
+
 /** OpenURL 的回执：命令交给系统打开器了就是 true（窗口在用户那侧，服务只认得"交出去了"）。 */
 export interface OpenURLReply {
   opened: boolean;

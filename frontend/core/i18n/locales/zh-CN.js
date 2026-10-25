@@ -186,7 +186,8 @@ export default {
   'err.GAC-TASK-003': '队列暂停中，这一步在动手前被叫停；点「继续队列」再跑',
   'err.GAC-TASK-004': '清单里没有这条条目（{itemId}）——它不是检测失败，也不是加速失败，是根本没这一条',
 
-  'err.GAC-UPDATE-501': '{method} 这一档要到 {milestone} 那一站才有，本期不提供',
+  'err.GAC-UPDATE-502': '检查更新没成：连不上更新源，或这一版还没有发布过的安装包',
+  'err.GAC-UPDATE-503': '安装包没下载完（网络断了或落盘失败），稍后再试',
 
   'err.GAC-UNKNOWN-000': '撞上一条没登记的错误（{code}），后台服务那句原文是：{message}。请把这两样一起反馈',
 

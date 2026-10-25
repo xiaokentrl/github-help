@@ -40,11 +40,12 @@ GitHub 加速助手：界面壳 $PKG-gui 不带权限，常驻后台 $PKG-servic
 本包只摆文件：不带 systemd 单元与装卸脚本，装它不会启动常驻进程、不会改 hosts。
 
 %install
-mkdir -p %{buildroot}/opt/$PKG %{buildroot}/usr/bin %{buildroot}/usr/share/applications
+mkdir -p %{buildroot}/opt/$PKG %{buildroot}/usr/bin %{buildroot}/usr/share/applications %{buildroot}/lib/systemd/system
 cp -a %{gac_stage}/opt/$PKG/.            %{buildroot}/opt/$PKG/
 cp -a %{gac_stage}/usr/bin/.              %{buildroot}/usr/bin/
 cp -a %{gac_stage}/usr/share/applications/. %{buildroot}/usr/share/applications/
 cp -a %{gac_stage}/usr/share/icons/.      %{buildroot}/usr/share/icons/
+cp -a %{gac_stage}/lib/systemd/.          %{buildroot}/lib/systemd/
 
 %files
 /opt/$PKG
@@ -52,6 +53,30 @@ cp -a %{gac_stage}/usr/share/icons/.      %{buildroot}/usr/share/icons/
 /usr/bin/$PKG-service
 /usr/share/applications/$PKG.desktop
 /usr/share/icons/hicolor/256x256/apps/$PKG.png
+/lib/systemd/system/$PKG.service
+
+# 与 deb 同一套口径:装+起、停、摘+清(装完只提权 rpm 这一次;卸载不残留 /run/github-accel)。
+# 不用 %systemd_post 那组宏——构建容器没装 systemd-rpm-macros 时宏原样落进包里,
+# 装机 scriptlet 当场挂(容器真装实测抓到的);直写 systemctl 命令,谁都展开得了。
+%post
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+  systemctl enable github-accel.service >/dev/null || true
+  systemctl start github-accel.service || true
+fi
+
+%preun
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl stop github-accel.service >/dev/null 2>&1 || true
+fi
+
+%postun
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl disable github-accel.service >/dev/null 2>&1 || true
+  systemctl daemon-reload || true
+  systemctl reset-failed >/dev/null 2>&1 || true
+fi
+if [ "\$1" = 0 ]; then rm -rf /run/github-accel; fi
 EOF
 
 # stage 树挂进 rpmbuild：本机跑给真路径，容器跑给 /stage。rpm 会自己对 buildroot 里的

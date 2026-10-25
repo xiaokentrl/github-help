@@ -440,6 +440,7 @@ func newStack(t *testing.T) *stack {
 		Modes:        st.modes,
 		Flusher:      st.flush,
 		Broadcaster:  st.events,
+		Updater:      &fakeUpdater{jsonBody: []byte(`{"tag_name":"vtest","body":"","assets":[]}`)},
 		HostsPath:    path,
 		SettingsPath: filepath.Join(dir, "settings.json"),
 		Version:      "test",
