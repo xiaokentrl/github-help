@@ -553,12 +553,22 @@ func TestOpenHostsReleasesPermissionAndReportsOpener(t *testing.T) {
 	if err := os.WriteFile(st.svc.cfg.HostsPath, []byte("127.0.0.1 localhost\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	var opened []string
-	st.svc.cfg.Opener = func(u string) error { opened = append(opened, u); return nil }
+	// 假会话:finder 找到"桌面",spawn 记下收到的命令与身份
+	oldFinder, oldSpawn := sessionFinder, sessionSpawn
+	t.Cleanup(func() { sessionFinder, sessionSpawn = oldFinder, oldSpawn })
+	var gotCmd, gotPath string
+	var gotUID uint32
+	sessionFinder = func() (desktopSession, bool) {
+		return desktopSession{uid: 1000, gid: 1000, env: []string{"DISPLAY=:0"}}, true
+	}
+	sessionSpawn = func(cmd string, args []string, uid, gid uint32, env []string) error {
+		gotCmd, gotPath, gotUID = cmd, args[0], uid
+		return nil
+	}
 
 	reply, err := st.svc.hOpenHosts(nil)
 	if err != nil {
-		t.Fatalf("权限放得开、打开器正常时不该报错：%v", err)
+		t.Fatalf("权限放得开、会话正常时不该报错：%v", err)
 	}
 	r := reply.(contract.OpenHostsReply)
 	if r.Mode != "0777" || !r.Opened || r.Note != "" {
@@ -571,19 +581,19 @@ func TestOpenHostsReleasesPermissionAndReportsOpener(t *testing.T) {
 	if info.Mode().Perm() != 0o777 {
 		t.Fatalf("文件权限该是 0777，got=%o", info.Mode().Perm())
 	}
-	if len(opened) != 1 || opened[0] != st.svc.cfg.HostsPath {
-		t.Fatalf("打开器该收到 hosts 路径一次，got=%v", opened)
+	if gotCmd != "xdg-open" || gotPath != st.svc.cfg.HostsPath || gotUID != 1000 {
+		t.Fatalf("桌面打开器收到的形状不对：cmd=%q path=%q uid=%d", gotCmd, gotPath, gotUID)
 	}
 
-	// 打开器失败：权限照样放开，回执如实说 Opened=false + 原因，不算失败
-	st.svc.cfg.Opener = func(string) error { return errors.New("没有显示会话") }
+	// 找不到桌面会话：权限照样放开，回执如实说 Opened=false + 原因，不算失败
+	sessionFinder = func() (desktopSession, bool) { return desktopSession{}, false }
 	reply, err = st.svc.hOpenHosts(nil)
 	if err != nil {
-		t.Fatalf("打开器不成不该算失败（权限已放开）：%v", err)
+		t.Fatalf("会话找不到不该算失败（权限已放开）：%v", err)
 	}
 	r = reply.(contract.OpenHostsReply)
 	if r.Opened || r.Note == "" {
-		t.Fatalf("打开器失败时该 Opened=false 且带原因，got opened=%v note=%q", r.Opened, r.Note)
+		t.Fatalf("会话找不到时该 Opened=false 且带原因，got opened=%v note=%q", r.Opened, r.Note)
 	}
 }
 

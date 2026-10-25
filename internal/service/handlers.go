@@ -285,7 +285,9 @@ func (s *Service) hOpenHosts(map[string]any) (any, error) {
 	}
 	opened := true
 	note := ""
-	if err := s.cfg.Opener(path); err != nil {
+	// "打开"那一步走桌面会话（opener_session.go:借界面进程的 uid 与环境）,
+	// 不走 s.cfg.Opener——那一个是给 OpenURL 的系统打开器,在 root 服务的黑屋子里拉不出窗口。
+	if err := openInDesktop(path); err != nil {
 		opened = false
 		note = err.Error()
 	}
