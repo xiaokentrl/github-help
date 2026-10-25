@@ -78,8 +78,10 @@ jobs:
           echo "tag=$TAG" >>"$GITHUB_OUTPUT"
           echo "发版 $TAG（版本 $V）"
 
+      # 注意 --prefix：这个 job 的其余步骤都要在仓库根跑（打包脚本、checksums），
+      # 所以不能像 ci.yml 那样给整个 job 设 working-directory，npm 这里单独指到 frontend。
       - name: Install frontend deps
-        run: npm ci
+        run: npm --prefix frontend ci
 
       - name: Package deb / rpm / AppImage / win
         run: |
