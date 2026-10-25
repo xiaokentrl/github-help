@@ -864,6 +864,7 @@ test('流程：启动自动化没勾选项时给的是带前缀的那句，跟�
   const restore = stubApi({});
   const { ui, calls } = makeUi();
   try {
+    state.settings.autoDetectOnStartup = true;   // 默认已改关（2026-10-25），这里测的是开着时的分支
     allUncheck();
     const flows = createFlows({ t, ui });
     await flows.runStartupAutomation();
@@ -883,6 +884,7 @@ test('流程：启动自动化撞见队列在跑时说的是自己那句，并�
   const restore = stubApi({ detect: ids => { seen.push(ids); return { taskID: 'x' }; } });
   const { ui, calls } = makeUi();
   try {
+    state.settings.autoDetectOnStartup = true;   // 默认已改关（2026-10-25）
     const flows = createFlows({ t, ui });
     await push(flows, table({ tasks: [srvTask('t1', 'apply', 'b', 'running')] }));
     await flows.runStartupAutomation();
@@ -896,6 +898,7 @@ test('流程：启动自动化里那一次请求当场失败＝说服务那一�
   const restore = stubApi({ detect: async () => { throw new WireError('GAC-IPC-041', { method: 'Detect' }, 'timeout'); } });
   const { ui, calls } = makeUi();
   try {
+    state.settings.autoDetectOnStartup = true;   // 默认已改关（2026-10-25）
     const flows = createFlows({ t, ui });
     await flows.runStartupAutomation();
     assert.deepEqual(calls.toasts, ['启动自动化：开始检测 4 项…', '⟪错⟫后台服务 12 秒没答话，这一句先当没成功，屏幕上还是上一次的读数'],
@@ -909,6 +912,7 @@ test('流程：启动自动化跑到一半线断了——断线那一句与带�
   const restore = stubApi({ detect: () => ({ taskID: 'batch-1' }) });
   const { ui, calls } = makeUi();
   try {
+    state.settings.autoDetectOnStartup = true;   // 默认已改关（2026-10-25）
     const flows = createFlows({ t, ui });
     const done = flows.runStartupAutomation();
     await tick();

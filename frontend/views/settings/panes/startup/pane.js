@@ -56,10 +56,12 @@ export default {
     });
     const applyCard = setCard({ rows: [applyRow.el] });
 
-    /** 原型 :1516-1530：检测没开，应用那颗就既按不动、整张卡片也该灰 */
+    /** 原型 :1516-1530：检测没开，应用那颗就既按不动、整张卡片也该灰。
+        setDraft 只在"检测关着而应用还开着"这一种要纠正的场合写——默认值改成关之后（2026-10-25），
+        两个都关的初值进来不该凭空多出几笔落盘记录（views-settings 用例数着 setDraft 呢）。 */
     function syncDepend() {
       const on = !!ctx.get('autoDetectOnStartup');
-      if (!on) ctx.setDraft('autoApplyOnStartup', false);
+      if (!on && !!ctx.get('autoApplyOnStartup')) ctx.setDraft('autoApplyOnStartup', false);
       autoApply.setChecked(on && !!ctx.get('autoApplyOnStartup'));
       autoApply.setDisabled(!on);
       applyRow.setDisabled(!on);            // 这一句管那一行：aria-disabled 与说明一起灰

@@ -49,12 +49,14 @@ func TestStoredKeysEqualContractKeys(t *testing.T) {
 // Defaults 的 13 个值要跟原型 :1199-1213 逐字相同。这里把那份原文抄成对照表：
 // 原型是需求载体，它改了而这边没改，这条就该红。
 func TestDefaultsMatchThePrototype(t *testing.T) {
+	// 两个开机键（AutoDetectOnStartup／AutoApplyOnStartup）2026-10-25 经用户拍板默认关，
+	// 原型里是开——这两格故意不再跟原型，其余 11 键仍逐字对齐原型默认。
 	want := Settings{
 		SidebarWidth: 240, QueueHeight: 252, Zoom: 1,
 		Language: "zh-CN", Theme: "light",
 		TrayMinimize: true, ShowTrayIcon: true, AutoStart: true, StartMinimized: false,
 		DetectFocusFollow: false, ApplyFocusFollow: false,
-		AutoDetectOnStartup: true, AutoApplyOnStartup: true,
+		AutoDetectOnStartup: false, AutoApplyOnStartup: false,
 	}
 	if got := Defaults(); got != want {
 		t.Fatalf("默认值跟原型对不上：\n got=%+v\nwant=%+v", got, want)

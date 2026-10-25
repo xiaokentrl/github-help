@@ -26,19 +26,20 @@ type Settings = contract.Settings
 // 默认值只许在这一个函数里定义——散到读文件与写文件两处，迟早给出不一样的那一份。
 func Defaults() Settings {
 	return Settings{
-		SidebarWidth:        240,
-		QueueHeight:         252,
-		Zoom:                1,
-		Language:            "zh-CN",
-		Theme:               "light",
-		TrayMinimize:        true,
-		ShowTrayIcon:        true,
-		AutoStart:           true,
-		StartMinimized:      false,
-		DetectFocusFollow:   false,
-		ApplyFocusFollow:    false,
-		AutoDetectOnStartup: true,
-		AutoApplyOnStartup:  true,
+		SidebarWidth:      240,
+		QueueHeight:       252,
+		Zoom:              1,
+		Language:          "zh-CN",
+		Theme:             "light",
+		TrayMinimize:      true,
+		ShowTrayIcon:      true,
+		AutoStart:         true,
+		StartMinimized:    false,
+		DetectFocusFollow: false,
+		ApplyFocusFollow:  false,
+		// 开机自动化默认关〔已定：2026-10-25 用户拍板，与 frontend/core/settings.js 的 DEFAULTS 同轮改〕。
+		AutoDetectOnStartup: false,
+		AutoApplyOnStartup:  false,
 	}
 }
 

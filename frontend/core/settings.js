@@ -21,8 +21,11 @@ export const DEFAULTS = {
   startMinimized: false,
   detectFocusFollow: false,
   applyFocusFollow: false,
-  autoDetectOnStartup: true,
-  autoApplyOnStartup: true
+  // 开机自动化默认关〔已定：2026-10-25 用户拍板〕——装完第一次开窗就自动写 hosts
+  // 属"程序自作主张动系统文件"，得用户显式开。已装用户的那份 settings.json 不受影响
+  // （normalize 只信文件里真写了的键，这里只管"第一次"）。
+  autoDetectOnStartup: false,
+  autoApplyOnStartup: false
 };
 
 export const SIDEBAR_MIN_W = 200;
