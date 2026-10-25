@@ -403,8 +403,10 @@ func split(text string) []string {
 
 // stack 是一条用例的全套装配：真清单 + 临时 hosts + 三个假件 + 一个事件收集器。
 type stack struct {
-	t       *testing.T
-	svc     *Service
+	t   *testing.T
+	svc *Service
+	// online 是断网判定假件的开关（netwatch 用例拨它,不碰真网）。
+	online  bool
 	events  *fakeBroadcaster
 	insp    *fakeInspector
 	modes   *fakeModes
@@ -424,6 +426,7 @@ func newStack(t *testing.T) *stack {
 	backup := filepath.Join(dir, "backup")
 	st := &stack{
 		t:          t,
+		online:     true,
 		events:     &fakeBroadcaster{},
 		insp:       newFakeInspector(),
 		modes:      newFakeModes(),
@@ -434,17 +437,21 @@ func newStack(t *testing.T) *stack {
 		backupPath: backup,
 	}
 	st.svc = New(Config{
-		Catalog:      st.catalog,
-		Engine:       st.engine,
-		Inspector:    st.insp,
-		Modes:        st.modes,
-		Flusher:      st.flush,
-		Broadcaster:  st.events,
-		Updater:      &fakeUpdater{jsonBody: []byte(`{"tag_name":"vtest","body":"","assets":[]}`)},
+		Catalog:     st.catalog,
+		Engine:      st.engine,
+		Inspector:   st.insp,
+		Modes:       st.modes,
+		Flusher:     st.flush,
+		Broadcaster: st.events,
+		Updater:     &fakeUpdater{jsonBody: []byte(`{"tag_name":"vtest","body":"","assets":[]}`)},
+		// netChecker 也给假件：用例不许拨真网(与 Updater 同一条口径);默认在线,netwatch 用例自己拨开关
+		// (这里给不了 svc 的字段——svc 在下面才 New,所以放 New 之后赋值)
 		HostsPath:    path,
 		SettingsPath: filepath.Join(dir, "settings.json"),
 		Version:      "test",
 	})
+	// 假判定器默认在线(与 Updater 同一条口径:用例不碰真网);netwatch 用例自己拨开关
+	st.svc.netChecker = func() bool { return st.online }
 	return st
 }
 

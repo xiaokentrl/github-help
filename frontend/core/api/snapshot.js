@@ -114,6 +114,9 @@ export function mergeSnapshot(state, snapshot, t) {
   // 状态栏「上次检测」取的是所有条目里最近那一次——服务没说"上一轮什么时候跑的"，只有每条自己的时间
   state.lastDetect = clockFromIso(newestIso);
 
+  // 断网判定（netwatch）此刻的读数：状态栏第一格照它画。快照没带（旧服务）就是"没这回事"，不乱猜。
+  state.networkOffline = !!snapshot.networkOffline;
+
   state.queue = (snapshot.tasks || []).map(tk => taskRow(tk, t));
 
   const st = snapshot.state || {};

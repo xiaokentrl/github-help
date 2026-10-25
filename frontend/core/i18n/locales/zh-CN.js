@@ -63,6 +63,8 @@ export default {
   'flow.enqueuedOne': '已加入队列：{name}',
 
   /* ---- 队列操作（原型 :3110、:3115、:3123-3126、:3141、:3149、:3153、:3157、:3165） ---- */
+  'flow.network.offline': '网络已断开：探测已暂停，等待网络恢复',
+  'flow.network.online': '网络已恢复：等待中的探测会继续',
   'flow.queue.pauseWillHold': '将在当前任务完成后暂停',
   'flow.queue.resumed': '队列已继续',
   'flow.queue.cancelTitle': '取消等待中的任务',
@@ -333,6 +335,7 @@ export default {
      事件名 network:change 契约里已经占好了。 */
   'statusbar.selectionPre': '已选 ',
   'statusbar.selectionRest': ' / {m} 项',
+  'statusbar.networkOffline': '网络已断开',
   'statusbar.linkUp': '后台服务已连上',
   'statusbar.linkDown': '后台服务未连上',
   'statusbar.startup': '启动自动化中',                // :747

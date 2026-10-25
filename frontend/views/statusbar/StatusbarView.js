@@ -45,8 +45,15 @@ export function createStatusbarView({ root, t }) {
   /** 顺序照原型 renderStatus（:2207-2226）里状态栏那几行：检测时间 → DNS → 已选 → 启动那一格。
       这一支还管第一格那颗点与那句话：那条线通不通只有 flows.onLink 知道，界面上这一格是它唯一的出口。 */
   function render() {
-    linkDot.className = 'live-dot' + (state.connected ? '' : ' off');
-    linkB.textContent = state.connected ? t('statusbar.linkUp') : t('statusbar.linkDown');
+    // 第一格三层话,由里往外查:线不通(壳与服务那条线)＞断网(服务判的,netwatch)＞都正常。
+    // 断网那一句 2026-10-26 接上(原先写死"网络正常"的那笔账,见文件头④)。
+    if (state.connected && state.networkOffline) {
+      linkDot.className = 'live-dot off';
+      linkB.textContent = t('statusbar.networkOffline');
+    } else {
+      linkDot.className = 'live-dot' + (state.connected ? '' : ' off');
+      linkB.textContent = state.connected ? t('statusbar.linkUp') : t('statusbar.linkDown');
+    }
     lastB.textContent = state.lastDetect || t('common.dash');
     dnsB.textContent = state.appStatus.dnsService;
     replace(selection, [

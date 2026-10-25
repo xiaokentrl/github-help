@@ -57,9 +57,10 @@ func (s *Service) snapshotLocked() contract.Snapshot {
 		state.LastErrorParams = errs.ParamsOf(readErr)
 	}
 	return contract.Snapshot{
-		State: state,
-		Items: s.itemsLocked(doc),
-		Tasks: s.tasksLocked(),
+		NetworkOffline: s.netOffline,
+		State:          state,
+		Items:          s.itemsLocked(doc),
+		Tasks:          s.tasksLocked(),
 	}
 }
 

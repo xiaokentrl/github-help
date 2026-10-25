@@ -20,6 +20,15 @@ import (
 type Service struct {
 	cfg Config
 
+	// netOffline 是断网判定此刻的读数（netwatch.go 那个循环在写）；
+	// netChecker 是"这台机器现在通不通网"的判据，New 给真拨号，用例换成假件拨开关。
+	// stopCtx/cancel 是 Start 收下的那一份 ctx 的可取消副本：Stop 要用它收掉判定循环
+	// （泵自己听 s.stop,watcher 只听 ctx——两条收工路径缺一条 lane.Wait 就等不到头）。
+	netOffline bool
+	netChecker func() bool
+	stopCtx    context.Context
+	stopCancel context.CancelFunc
+
 	// mu 守下面所有可变字段。事件里的快照就在这把锁里组装：一次锁、一份完整状态。
 	mu        sync.Mutex
 	startedAt time.Time
@@ -104,6 +113,7 @@ func New(cfg Config) *Service {
 
 	s := &Service{
 		cfg:         cfg,
+		netChecker:  netCheckDefault,
 		startedAt:   time.Now(),
 		order:       []string{},
 		items:       map[string]*itemState{},
@@ -143,15 +153,21 @@ func New(cfg Config) *Service {
 // 为什么只有一条通道：写入必须串行（L3 的永久解），检测要并发就让它排在通道里慢慢跑——
 // 本期"卡不卡"的判据还没给数（技术方案第 14 节那条仍开口的），先按最不容易出错的形状做。
 func (s *Service) Start(ctx context.Context) {
+	s.stopCtx, s.stopCancel = context.WithCancel(ctx)
 	s.lane.Add(1)
 	go func() {
 		defer s.lane.Done()
-		s.pump(ctx)
+		s.pump(s.stopCtx)
 	}()
+	// 断网判定跟着同一份可取消 ctx：Stop 收队列的时候它一起收工。
+	s.startNetworkWatch(s.stopCtx)
 }
 
 // Stop 叫停队列并等它把手上那条跑完。在飞的网络调用由 ctx 取消，不会留下半个写入。
 func (s *Service) Stop() {
+	if s.stopCancel != nil {
+		s.stopCancel() // 判定循环只听 ctx,先叫它退,lane.Wait 才等得到头
+	}
 	s.mu.Lock()
 	s.stopping = true
 	s.mu.Unlock()

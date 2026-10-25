@@ -43,6 +43,8 @@ export const state = {
 
   // 这三栏全部由服务回，界面不猜（已定：C5）；空一律留空串，渲染那侧按 — 画
   appStatus: { dnsService: '—', dataDir: '', hostsPath: '' },
+  // 断网判定（network:change 事件与每份快照都带）：状态栏第一格与气泡读它
+  networkOffline: false,
   // current 与 buildDate 不在这里写死：开机那一下由 core/flows.js 的 start()→readEnvironment() 走契约 GetVersion 填进来。
   // progress 与 speed 只属于"正在下载"那一段，下载完了留着最后一次那两个数（原型 :1699-1706 就是这个表现）。
   // checkError 是最近一次「检查更新」服务回的那句失败（人话由 err.<码> 凑）。为什么单开一栏而不是塞进 log：

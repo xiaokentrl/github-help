@@ -205,6 +205,13 @@ func (s *Service) take() *task {
 				if t.status != contract.TaskWaiting {
 					continue
 				}
+				// 断网时探测类留在等待里（netwatch 那一轮拨不通＝现在跑了也是白跑,
+				// 每种方式按超时各死一遍还不如等网回来）;应用／恢复不需要网,照跑。
+				// 恢复联网后这里自然放行,不用谁去点「继续」〔已定：2026-10-26 用户拍〕;
+				// 手点的那颗「暂停」仍是全类一体的闸,与这一条各管各的。
+				if s.netOffline && t.kind == contract.KindDetect {
+					continue
+				}
 				t.moveTo(contract.TaskRunning)
 				// 秒表每次取跑都重按一次：暂停退回等待、恢复后再跑的那一行，「耗时」只算最后这一段。
 				t.startedAt = time.Now()

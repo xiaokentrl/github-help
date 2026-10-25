@@ -73,9 +73,10 @@ const (
 // 反过来删了这一条却没人发，同一条用例也红——两边都拦，才不会有"看着像接上了"的第三种状态。
 //
 // 怎么回来：接上那一站同轮做三件事：这里删一条、生产者那一处发出去、界面那边按已有订阅画（一条也不用改）。
+// network:change 2026-10-26 起有真生产者（service/netwatch.go），从这份名单摘除；
+// download:progress 仍挂在这里（同步下载暂不带进度,见 update.go 头上那条交底）。
 var EventsPending = map[string]string{
 	EventDownloadProgress: "M5 更新通道（CheckUpdate／DownloadUpdate 真跑起来那天才有进度可推）",
-	EventNetworkChange:    "断网判定 GAC-DETECT-006（后端目录结构规划第 6.4 节第 1 条）",
 }
 
 // AllEvents 同上：清单只有一个家（AllMethods 那段说明）。
@@ -390,8 +391,11 @@ type Event struct {
 
 // Snapshot 是事件带出去的完整状态快照。
 type Snapshot struct {
-	State State  `json:"state"`
-	Items []Item `json:"items"`
+	State State `json:"state"`
+	// NetworkOffline 是断网判定（netwatch.go）此刻的读数：true＝刚才那一轮拨不通。
+	// 事件 network:change 与每一份快照都带它，状态栏第一格照它画。
+	NetworkOffline bool   `json:"networkOffline"`
+	Items          []Item `json:"items"`
 	// 写入任务在这里排队，界面只读不写。
 	Tasks []Task `json:"tasks"`
 }

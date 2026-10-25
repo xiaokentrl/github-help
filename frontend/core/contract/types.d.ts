@@ -94,6 +94,8 @@ export interface Settings {
 
 /** 事件带出去的完整状态快照：界面不许靠"先收一半再猜另一半"画界面 */
 export interface Snapshot {
+  /** 断网判定（netwatch）此刻的读数：状态栏第一格照它画 */
+  networkOffline: boolean;
   state: State;
   items: Item[];
   tasks: Task[];

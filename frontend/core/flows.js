@@ -580,10 +580,17 @@ export function createFlows({ t, ui }) {
   }
 
   /** 每一条事件都自带完整快照（契约那句"界面不许靠先收一半再猜另一半画界面"），所以五条走同一支处理函数。
-      没带快照的那一条（通道给的形状不完整）只补画一次，不猜。 */
+      没带快照的那一条（通道给的形状不完整）只补画一次，不猜。
+      network:change 在吞快照之外多说一句话：断网／恢复各弹一次气泡〔已定：2026-10-26 用户拍
+      "断网暂停探测,并显示网络已断开,再联网可'继续'"〕——探测本身的停与续在服务那侧
+      （queue.take 的过滤），界面只负责把话说出来。 */
   function onEvent(event) {
     if (event && event.snapshot) {
+      const wasOffline = state.networkOffline;
       ingest(event.snapshot);
+      if (event.name === 'network:change' && state.networkOffline !== wasOffline) {
+        ui.toast(state.networkOffline ? t('flow.network.offline') : t('flow.network.online'));
+      }
       return;
     }
     paint();
