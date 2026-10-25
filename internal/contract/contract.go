@@ -36,6 +36,7 @@ const (
 	MethodGetSnapshot    = "GetSnapshot"
 	MethodClearTasks     = "ClearTasks"
 	MethodOpenURL        = "OpenURL"
+	MethodOpenHosts      = "OpenHosts"
 )
 
 // AllMethods 是上面那 16 条的清单本身。为什么要有一份切片而不只有一批常量：
@@ -45,7 +46,7 @@ var AllMethods = []string{
 	MethodGetStatus, MethodDetect, MethodApplyQueue, MethodRestoreItem, MethodRestoreHosts,
 	MethodGetSettings, MethodSaveSettings, MethodCheckPerm, MethodCheckUpdate,
 	MethodDownloadUpdate, MethodGetVersion, MethodCancelTask, MethodPauseQueue, MethodResumeQueue,
-	MethodGetSnapshot, MethodClearTasks, MethodOpenURL,
+	MethodGetSnapshot, MethodClearTasks, MethodOpenURL, MethodOpenHosts,
 }
 
 // 事件名。服务往界面推的这些名字，两侧必须逐字一致。
@@ -110,7 +111,12 @@ var AllEvents = []string{
 // 10＝加 OpenURL（第 17 个方法）：「关于我们」那三颗入口钮从原型阶段的"回执一句（模拟）"接成真的——
 // 打开外部页面是"从界面发一句话、由真开网页的那一侧执行"，与改 hosts 同走一条契约通道，
 // 由服务用系统打开器执行（argv 直传、不经 shell；scheme 只认 http／https）。
-const ProtocolVersion = 10
+// 11＝加 OpenHosts（第 18 个方法）：工具栏「检测全部」左边那颗「打开Hosts」——
+// 服务把 hosts 文件 chmod 0777（用户态编辑器存得进），再用系统打开器拉起编辑器。
+// 0777＝本机任何用户/进程都能改 hosts,与"服务 root 常驻"（权限模型 2026-10-25 拍板）
+// 是同一条取舍线上的既定代价；下一次应用时 hosts 引擎的 temp+rename 会把原权限带回去，
+// 所以这个放开是"到下一次应用为止"的。
+const ProtocolVersion = 11
 
 const (
 	// ServiceRunning 表示服务在线、可以接活。
@@ -329,6 +335,14 @@ type CancelReply struct {
 // 为什么不给"浏览器真的开了"这一格：窗口在用户那一侧，服务只认得"交出去了"。
 type OpenURLReply struct {
 	Opened bool `json:"opened"`
+}
+
+// OpenHostsReply 是 OpenHosts 的回执：Mode＝实际放开的权限字面量，Opened＝系统打开器
+// 有没有真把编辑器拉起来（false＝权限已放开但没有显示会话，界面要如实说，不许画成成功）。
+type OpenHostsReply struct {
+	Mode   string `json:"mode"`
+	Opened bool   `json:"opened"`
+	Note   string `json:"note,omitempty"`
 }
 
 type QueueReply struct {

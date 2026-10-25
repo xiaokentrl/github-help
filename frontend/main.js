@@ -296,6 +296,16 @@ const toolbar = createToolbarView({
         tree.render();
       }, SEARCH_DEBOUNCE_MS);
     },
+    onOpenHosts: async () => {
+      try {
+        const r = await api.openHosts();
+        toast.show({ text: r.opened
+          ? t('toolbar.hostsOpened', { mode: r.mode })
+          : t('toolbar.hostsOpenedNoEditor', { mode: r.mode, note: r.note || '' }) });
+      } catch (e) {
+        toast.show({ text: replyErrorText(t, e), kind: 'error' });
+      }
+    },
     onDetectAll: () => flows.detectAll(),
     onApplyQueue: () => flows.applyQueue(),
     onRestore: () => flows.restoreAll()

@@ -61,6 +61,10 @@ export const api = {
       打不开（scheme 不对／打开器没跑成）回 GAC-IPC-013，调用点拿码去语言文件换句子 */
   openURL: url => call('openURL', { url }),
 
+  /** 契约 OpenHosts，无参数：服务把 hosts chmod 0777 再拉起编辑器。打开器不成不算失败
+      （回 opened:false＋note），权限设不上才算失败（GAC-IPC-014） */
+  openHosts: () => call('openHosts', {}),
+
   /** 契约 CancelTask，收 {taskID}；不填＝撤掉所有等待中的行（顶部那颗「取消等待」） */
   cancelTask: taskID => call('cancelTask', taskID ? { taskID } : {}),
   /** 契约 PauseQueue：关闸，回的是闸此刻的状态 */

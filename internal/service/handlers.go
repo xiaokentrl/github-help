@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 
 	"github.com/hlep/github-accel/internal/contract"
 	"github.com/hlep/github-accel/internal/errs"
@@ -48,6 +49,7 @@ func (s *Service) Register(h *ipc.Server) {
 	h.Register(contract.MethodGetSnapshot, s.hGetSnapshot)
 	h.Register(contract.MethodClearTasks, s.hClearTasks)
 	h.Register(contract.MethodOpenURL, s.hOpenURL)
+	h.Register(contract.MethodOpenHosts, s.hOpenHosts)
 }
 
 // registeredMethods 把注册表读出来给门禁 G3 用：它要的是"实际挂上去的名字"，不是"代码里写了几行 Register"。
@@ -72,6 +74,7 @@ func (s *Service) registeredMethods() map[string]ipc.Handler {
 		contract.MethodGetSnapshot:    s.hGetSnapshot,
 		contract.MethodClearTasks:     s.hClearTasks,
 		contract.MethodOpenURL:        s.hOpenURL,
+		contract.MethodOpenHosts:      s.hOpenHosts,
 	}
 }
 
@@ -264,4 +267,27 @@ func (s *Service) hOpenURL(params map[string]any) (any, error) {
 			"打开器交不出去这一句：%v", err)
 	}
 	return contract.OpenURLReply{Opened: true}, nil
+}
+
+// hOpenHosts 无参数：把 hosts 文件 chmod 0777（用户态编辑器存得进去），再用系统打开器拉起它。
+// 会错在哪：① 权限设不上（文件拿不到／不是 root 也没属主）→ 当场拒，回 GAC-IPC-014，
+//
+//	界面不说"打开了"；② 打开器没跑成（常见：root 服务没有显示会话）→ **不算失败**：
+//	权限已经放开、用户拿自己顺手的编辑器就能改，回执里 Opened=false + 原因，界面如实转述。
+//
+// 权限的来回：下一次应用时 hosts 引擎按原文件的 mode 走 temp+rename，0777 自然收回去；
+// 这个"放开"是到下一次应用为止的，不是永久改权限。
+func (s *Service) hOpenHosts(map[string]any) (any, error) {
+	path := s.cfg.HostsPath
+	if err := os.Chmod(path, 0o777); err != nil {
+		return nil, errs.New(errs.CodeIPCOpenHosts, map[string]any{"path": path},
+			"hosts 的权限放不开（0777 设不上）：%v", err)
+	}
+	opened := true
+	note := ""
+	if err := s.cfg.Opener(path); err != nil {
+		opened = false
+		note = err.Error()
+	}
+	return contract.OpenHostsReply{Mode: "0777", Opened: opened, Note: note}, nil
 }

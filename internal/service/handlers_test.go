@@ -13,6 +13,8 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -465,5 +467,57 @@ func TestClearTasksReplyIsTheTableAfterwards(t *testing.T) {
 	}
 	if len(snap.Items) != len(before.Items) {
 		t.Fatalf("条目从 %d 行变成 %d 行：抹队列不该碰条目表", len(before.Items), len(snap.Items))
+	}
+}
+
+// 「打开Hosts」那颗钮的后半截：权限放得开、打开器成与不成各说各的话。
+// 会错在哪：① 权限放开了却谎报"打开成了"（root 服务没有显示会话是常态）→ 用户等一个不会出现的编辑器；
+// ② 权限没放开却报成功 → 用户在编辑器里改了半天存不上；
+// ③ 0777 变成永久改权限 → 任何本机进程从此都能改 hosts——好在应用那一步 temp+rename 会把原 mode 带回来。
+func TestOpenHostsReleasesPermissionAndReportsOpener(t *testing.T) {
+	st := newStack(t)
+	if err := os.WriteFile(st.svc.cfg.HostsPath, []byte("127.0.0.1 localhost\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var opened []string
+	st.svc.cfg.Opener = func(u string) error { opened = append(opened, u); return nil }
+
+	reply, err := st.svc.hOpenHosts(nil)
+	if err != nil {
+		t.Fatalf("权限放得开、打开器正常时不该报错：%v", err)
+	}
+	r := reply.(contract.OpenHostsReply)
+	if r.Mode != "0777" || !r.Opened || r.Note != "" {
+		t.Fatalf("回执不对：mode=%q opened=%v note=%q", r.Mode, r.Opened, r.Note)
+	}
+	info, err := os.Stat(st.svc.cfg.HostsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o777 {
+		t.Fatalf("文件权限该是 0777，got=%o", info.Mode().Perm())
+	}
+	if len(opened) != 1 || opened[0] != st.svc.cfg.HostsPath {
+		t.Fatalf("打开器该收到 hosts 路径一次，got=%v", opened)
+	}
+
+	// 打开器失败：权限照样放开，回执如实说 Opened=false + 原因，不算失败
+	st.svc.cfg.Opener = func(string) error { return errors.New("没有显示会话") }
+	reply, err = st.svc.hOpenHosts(nil)
+	if err != nil {
+		t.Fatalf("打开器不成不该算失败（权限已放开）：%v", err)
+	}
+	r = reply.(contract.OpenHostsReply)
+	if r.Opened || r.Note == "" {
+		t.Fatalf("打开器失败时该 Opened=false 且带原因，got opened=%v note=%q", r.Opened, r.Note)
+	}
+}
+
+// 权限放不开（文件不存在）必须当场拒，不许回一个"打开了"。
+func TestOpenHostsRefusesWhenFileMissing(t *testing.T) {
+	st := newStack(t)
+	st.svc.cfg.Opener = func(string) error { return nil }
+	if _, err := st.svc.hOpenHosts(nil); err == nil {
+		t.Fatal("hosts 文件不存在时该报错，不该装作打开了")
 	}
 }

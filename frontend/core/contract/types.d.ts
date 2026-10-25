@@ -148,6 +148,13 @@ export interface OpenURLReply {
   opened: boolean;
 }
 
+/** OpenHosts 的回执：Mode＝放开的权限字面量；Opened＝编辑器真被拉起来了（false＝没显示会话，如实说）。 */
+export interface OpenHostsReply {
+  mode: string;
+  opened: boolean;
+  note?: string;
+}
+
 export interface CancelReply {
   cancelled: boolean;
   count: number;

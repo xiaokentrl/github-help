@@ -111,7 +111,8 @@ test('六块各 build 一次：不抛错、不缺键、壳里留下的是容器�
     }
     assert.equal(roots.menuRoot.children.length, 4, '菜单里四块：圆点那一区、一条分隔、两条动作');
     assert.equal(roots.menuRoot.querySelectorAll('[data-dot]').length, 6, '圆点数＝喂进来的主题套数（这里给 6 套）');
-    assert.equal(roots.toolbarRoot.querySelectorAll('button').length, 7, '工具栏 7 颗钮：三小＋三大＋搜索清空那颗');
+    // 8 颗＝三小（全选/反选/折叠）＋「打开Hosts」（2026-10-25 加,不受忙碌闸管）＋三大＋搜索清空
+    assert.equal(roots.toolbarRoot.querySelectorAll('button').length, 8, '工具栏 8 颗钮：三小＋「打开Hosts」＋三大＋搜索清空那颗');
   } finally {
     restore();
   }
@@ -388,8 +389,9 @@ test('数量对照：这六块各建一次之后，界面上的钮与格子总�
     createSidebarFooterView({ root: footerRoot, t, handlers: { onSync: () => { }, onSettings: () => { } } });
 
     assert.equal(topbarRoot.querySelectorAll('button').length, 1, '顶栏只有一颗钮（检查更新）：窗口那三颗由壳画，界面不画假的');
-    assert.equal(toolbarRoot.querySelectorAll('button').length, 7,
-      '工具栏 7 颗＝三颗小钮（全选、反选、折叠）＋三颗大钮＋搜索框里那颗清空；对不上就是搬件时多了或缺了一颗');
+    // 8 颗＝三小＋「打开Hosts」（2026-10-25 加）＋三大＋搜索清空
+    assert.equal(toolbarRoot.querySelectorAll('button').length, 8,
+      '工具栏 8 颗＝三颗小钮（全选、反选、折叠）＋「打开Hosts」＋三颗大钮＋搜索框里那颗清空；对不上就是搬件时多了或缺了一颗');
     assert.equal(statusRoot.querySelectorAll('.item').length, 6, '状态栏 6 格：网络、启动那一格、模式、DNS、上次检测、已选');
     assert.equal(footerRoot.querySelectorAll('button').length, 2);
   } finally {

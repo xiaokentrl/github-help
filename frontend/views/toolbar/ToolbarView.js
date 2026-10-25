@@ -48,6 +48,8 @@ export function createToolbarView({ root, progress, t, handlers }) {
     ]
   });
 
+  // 「打开Hosts」不受忙碌闸管：它不进队列、不写 hosts，权限放开与拉编辑器随时可做
+  const openHosts = Button({ label: t('toolbar.openHosts'), title: t('toolbar.openHostsTitle'), onClick: () => handlers.onOpenHosts() });
   const detectAll = Button({ label: t('toolbar.detectAll'), onClick: () => handlers.onDetectAll() });
   const applyQueue = Button({ label: t('toolbar.applyQueue'), kind: 'primary', onClick: () => handlers.onApplyQueue() });
   const restore = Button({ label: t('toolbar.restore'), kind: 'danger', onClick: () => handlers.onRestore() });
@@ -57,7 +59,7 @@ export function createToolbarView({ root, progress, t, handlers }) {
     el('div', { class: 'divider-v' }),
     search.el, mode.el,
     el('div', { class: 'spacer' }),
-    detectAll.el, applyQueue.el, restore.el
+    openHosts.el, detectAll.el, applyQueue.el, restore.el
   ]);
   if (progress) root.appendChild(progress);
 
@@ -81,5 +83,5 @@ export function createToolbarView({ root, progress, t, handlers }) {
   }
 
   render();
-  return { el: root, render, search, mode, buttons: { selectToggle, invert, foldToggle, detectAll, applyQueue, restore } };
+  return { el: root, render, search, mode, buttons: { selectToggle, invert, foldToggle, openHosts, detectAll, applyQueue, restore } };
 }

@@ -20,19 +20,19 @@ var (
 	eventRe  = regexp.MustCompile(`(?m)^\t(Event[A-Za-z]+)\s+=\s+"([^"]+)"$`)
 )
 
-// 方法清单钉死成 17 条（契约 v0.1 那 11 条 + 定档轮 D7 甲补的 CancelTask + 队列暂停那两条 + 联调轮补的
-// GetSnapshot、ClearTasks + 2026-10-25 补的第 17 条 OpenURL，「关于我们」三颗入口钮接真）。
+// 方法清单钉死成 18 条（契约 v0.1 那 11 条 + 定档轮 D7 甲补的 CancelTask + 队列暂停那两条 + 联调轮补的
+// GetSnapshot、ClearTasks + 2026-10-25 补的第 17 条 OpenURL、第 18 条 OpenHosts）。
 // 谁想再加一条，这条测试先红，目的就是逼他去改文档、走版本号，而不是在代码里悄悄扩契约。
-func TestMethodListIsTheFrozenSeventeen(t *testing.T) {
+func TestMethodListIsTheFrozenEighteen(t *testing.T) {
 	want := []string{
 		"ApplyQueue", "CancelTask", "CheckPermissions", "CheckUpdate", "ClearTasks", "Detect", "DownloadUpdate",
-		"GetSettings", "GetSnapshot", "GetStatus", "GetVersion", "OpenURL", "PauseQueue", "RestoreHosts",
-		"RestoreItem", "ResumeQueue", "SaveSettings",
+		"GetSettings", "GetSnapshot", "GetStatus", "GetVersion", "OpenHosts", "OpenURL",
+		"PauseQueue", "RestoreHosts", "RestoreItem", "ResumeQueue", "SaveSettings",
 	}
 	// 加了方法必须同时把版本号推上去，否则握手那一步拦不住新旧两侧。
 	// 这里钉的是"这一份 16 条清单是哪一档定下的"：v7、v8、v9 三档都没加方法、只补了字段，
 	// 所以钉的数字跟着版本号走，而"加一条方法不动版本号"照样会在这里红。
-	if ProtocolVersion != 10 {
+	if ProtocolVersion != 11 {
 		t.Fatalf("清单里已经有 %d 个方法，ProtocolVersion 却还是 %d", len(want), ProtocolVersion)
 	}
 	if len(AllMethods) != len(want) {

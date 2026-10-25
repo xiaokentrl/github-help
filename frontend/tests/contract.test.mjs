@@ -1,5 +1,5 @@
 /* 前端与 Go 服务之间的接头检查。干什么用：一条命令现读 Go 那边的常量与 json tag，跟界面这一侧的事件名清单、字段形状逐字对账；
-   再量两件"名字都对但线没通"的：那 17 个方法有没有人调、那 5 条事件有没有人接。
+   再量两件"名字都对但线没通"的：那 18 个方法有没有人调、那 5 条事件有没有人接。
    会错在哪：两侧名字漂了不会有人报错，只会界面上"队列跑完了还停在上一次"、某个字段读到 undefined 显示成空白；这类问题靠人眼查最慢。
              而"注册齐了却没人调用"连名字都不漂——2026-10-23 那轮查出的 GetSettings／SaveSettings 就是这样，
              设置存不进服务那一份文件，开机开关成了摆设，全套名字检查一路绿。
@@ -34,13 +34,13 @@ test('界面订阅的事件名 = Go 侧发射的事件名，一条不多一条�
   assert.equal(go.length, 5, 'Go 侧事件应为 5 条：冻结的 4 条 + 4A 之后的 detect:progress');
 });
 
-/* 界面将来要按这 17 个方法调用：11 条契约原表 + CancelTask + 队列暂停两条 + 联调轮补的 GetSnapshot、ClearTasks
-   + 2026-10-25 补的 OpenURL（「关于我们」三颗入口钮接真）。
+/* 界面将来要按这 18 个方法调用：11 条契约原表 + CancelTask + 队列暂停两条 + 联调轮补的 GetSnapshot、ClearTasks
+   + 2026-10-25 补的 OpenURL（「关于我们」三颗入口钮接真）与 OpenHosts（工具栏「打开Hosts」）。
    数字写在这里不是为了让它好看：Go 那边加一条方法、这边不跟着改，界面那颗新按钮就点下去没反应（通道回 GAC-IPC-011）。 */
-test('Go 侧方法应是冻结的 17 条（11 条契约 + CancelTask + 队列暂停两条 + GetSnapshot／ClearTasks + OpenURL）', async () => {
+test('Go 侧方法应是冻结的 18 条（11 条契约 + CancelTask + 队列暂停两条 + GetSnapshot／ClearTasks + OpenURL＋OpenHosts）', async () => {
   const go = await goConstants('Method');
-  assert.equal(go.length, 17, `界面将来要按这 17 个方法调用，Go 侧现在是 ${go.length} 个：${go.join(', ')}`);
-  assert.equal(new Set(go).size, 17, 'Go 侧方法名有重复');
+  assert.equal(go.length, 18, `界面将来要按这 18 个方法调用，Go 侧现在是 ${go.length} 个：${go.join(', ')}`);
+  assert.equal(new Set(go).size, 18, 'Go 侧方法名有重复');
 });
 
 /* 方法名／走线名／版本号：界面那三个名单与 Go 那三个名单必须逐字相同。
@@ -58,7 +58,7 @@ test('界面 METHODS／WIRE／版本号 与 Go 侧逐字相同（版本号漂了
   const same = (a, b) => JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
 
   const goMethods = goValues('Method');
-  assert.ok(goMethods.length === 17 && Object.keys(METHODS).length === 17,
+  assert.ok(goMethods.length === 18 && Object.keys(METHODS).length === 18,
     `方法两边数量不对：Go ${goMethods.length}／界面 ${Object.keys(METHODS).length}`);
   assert.ok(same(goMethods, Object.values(METHODS)),
     `方法名两边对不上：Go 有 ${sorted(goMethods).join(', ')}；界面有 ${sorted(Object.values(METHODS)).join(', ')}`);
@@ -101,14 +101,14 @@ test('Go 侧的状态串 = 界面状态字典的键名，四组逐一对上', as
   }
 });
 
-/* 契约那 17 个方法，每一个都得真有人在 core/api/ 之外叫它。干什么用：
+/* 契约那 18 个方法，每一个都得真有人在 core/api/ 之外叫它。干什么用：
    这一条挡的是 2026-10-23 那轮查出来的那种洞——GetSettings／SaveSettings 两边都注册好了、名字也对得上，
    可是界面一处也没调用：服务那一份设置文件于是永远没人写，高权限服务开机读的是默认值，
    界面上两把开机开关关了也白关。上面那几条"名字两边一致"全绿，一个字的错也没犯，功能却是死的。
    会错在哪：只看名字对不上是查不出"没人调用"的；方法名齐、动词齐、调用点为零，症状是"设置了但没生效"。
    怎么回来：新加一个契约方法那一轮，除了改三处名单，还要在这里点名它由谁调用——
              红了就是告诉你"这条线铺好了还没人走"，要么接上，要么别加。 */
-test('契约那 17 个方法，每一个在 core/api/ 之外至少有一个调用点', async () => {
+test('契约那 18 个方法，每一个在 core/api/ 之外至少有一个调用点', async () => {
   const { METHODS } = await import('../core/contract/methods.js');
   const files = await jsSources(path.join(ROOT, 'frontend'));
   const callSites = name => {

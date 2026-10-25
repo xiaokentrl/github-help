@@ -300,6 +300,10 @@ export default {
      因为换解析方式属后端那一侧（技术方案第 12 节），界面上今天没有这条路；
      清空那颗小钮是 components/text-field 自己补的（原型只有一只光秃的搜索框），所以它那句说明在原型里找不到行号。 */
   'toolbar.invert': '反选',                         // :691
+  'toolbar.openHosts': '打开Hosts',
+  'toolbar.openHostsTitle': '放开 hosts 编辑权限（0777）并用系统编辑器打开；下一次「应用」会自动收回权限',
+  'toolbar.hostsOpened': 'hosts 已放开 {mode} 并打开编辑器；改完点「同步状态」或「检测」即可',
+  'toolbar.hostsOpenedNoEditor': 'hosts 已放开 {mode}，但编辑器没拉起来（{note}）——用你顺手的编辑器改就是了',
   'toolbar.detectAll': '检测全部',                   // :701
   'toolbar.applyQueue': '应用队列',                  // :702
   'toolbar.restore': '恢复',                        // :703
