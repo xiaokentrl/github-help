@@ -23,8 +23,8 @@ Repoint GitHub-related domains to faster IPs via the hosts file — detect, appl
 | --- | --- | --- |
 | Linux (Debian/Ubuntu) | `*.deb` | `sudo dpkg -i *.deb`，装完自动注册并启动系统服务 |
 | Linux (RPM 系) | `*.rpm` | `sudo rpm -Uvh *.rpm`，同上 |
-| Linux (免安装) | `*.AppImage` | 双击即用（宿主需已装 webkit2gtk-4.1） |
-| Windows | `*_windows_amd64.zip` | 解压后运行 `github-accel-gui.exe` |
+| Linux (免安装) | `*.AppImage` | 双击即用，自带 webkit2gtk-4.1（在较新发行版上构建，要求宿主 glibc ≥ 2.39：Ubuntu 24.04+/Debian 13+；更老的系统请用 deb） |
+| Windows | `*_windows_amd64.zip` | 解压后**以管理员身份**运行 `github-accel-service.exe`，再运行 `github-accel-gui.exe`（需 WebView2，Win10/11 自带） |
 
 装完在应用菜单里点「GitHub 加速助手」。改 hosts 的动作由一个以 root 运行的后台服务（`github-accel.service`）完成，界面本身不带任何权限；两者通过本机 Unix socket 通信。
 
@@ -52,10 +52,13 @@ make check             # CI 同款本地检查：go test/vet + gofmt + Windows �
 ## 安全模型 / Security notes
 
 - 后台服务以 **root** 常驻（写 `/etc/hosts` 本来就需要）；界面以普通权限运行，二者经本机 socket 通信，socket 权限 0666（本机任何用户可连）——这是开发者工具的既定取舍；
+- Windows 侧走命名管道，DACL 只放行 SYSTEM／管理员／交互式登录用户；
 - 写入 hosts 的每一行都带 `gac:` 标记并记录应用前的地址，恢复靠标记逐行撤销，你自己的行永远原样保留；
 - hosts 备份保留最近 10 份，写入失败自动回滚；
 - 「打开Hosts」临时放开 0777 编辑权限，下一次「应用」自动收回；
 - 更新检查只读本仓库的 GitHub Release；更新包下载后**不会自动安装**。
+
+发行版兼容速查：deb（Ubuntu 22.04+/Debian 12+，依赖自动解析）｜rpm（Fedora 原生；EL9 缺 webkit2gtk-4.1，请用 AppImage 或 deb）｜AppImage（glibc ≥ 2.39）｜Windows 10/11。
 
 ## 目录速览 / Layout
 

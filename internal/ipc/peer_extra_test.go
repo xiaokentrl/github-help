@@ -1,3 +1,5 @@
+//go:build !windows
+
 package ipc
 
 import (
@@ -68,6 +70,11 @@ func TestDialEndpointsFallsThroughToUserEndpoint(t *testing.T) {
 	t.Setenv("XDG_RUNTIME_DIR", dir)
 	if os.Geteuid() == 0 {
 		t.Skip("root 态没有第二条候选可落，这条只对普通用户跑")
+	}
+	// 这台机器若真装了我们的服务（/run/github-accel/service.sock 活着），第一条候选就通,
+	// "落到用户端点"这个前提不成立——如实跳过,别让用例跟真安装态打架。
+	if _, err := os.Stat(filepath.Join(rootEndpointDir, "service.sock")); err == nil {
+		t.Skip("本机有真安装态的 root 服务在跑,fallthrough 前提不成立")
 	}
 	srvPath, err := Endpoint()
 	if err != nil {

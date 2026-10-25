@@ -3,7 +3,10 @@ module github.com/hlep/github-accel
 // Go 版本与 phpo 逐字一致（phpo/go.mod 同一行 `go 1.27`，CI 亦为 "1.27"），不写 toolchain 行。
 go 1.27
 
-require github.com/wailsapp/wails/v3 v3.0.0-beta.23
+require (
+	github.com/Microsoft/go-winio v0.6.2
+	github.com/wailsapp/wails/v3 v3.0.0-beta.23
+)
 
 require (
 	github.com/adrg/xdg v0.5.3 // indirect
