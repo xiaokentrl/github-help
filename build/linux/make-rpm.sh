@@ -70,5 +70,8 @@ fi
 
 say "rpm ③ 产物"
 find "$RPMDIR/RPMS" -name '*.rpm' -print -exec ls -la {} \;
+# 拷到 build/out 顶层，与 deb／AppImage／zip 同层——Release 工作流与 checksums.txt
+# 的收集口径都是"build/out 顶层的四类后缀"，rpm 留在 rpmbuild 子树里会被静默漏发（v0.0.0-m13 实测）。
+cp -a "$RPMDIR"/RPMS/*/*.rpm "$OUT/"
 echo
 echo "版本 $VERSION（rpm 里记作 $RPMVER）／构建时间 $BUILD_DATE 已注进 service"
