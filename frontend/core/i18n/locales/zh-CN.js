@@ -489,7 +489,7 @@ export default {
   'settings.about.repo': '项目主页',                                     // :1014
   'settings.about.feedback': '反馈问题',                                  // :1015
   'settings.about.licenseBtn': '许可协议',                                // :1016
-  'settings.about.license': 'CC BY-SA 4.0',                              // :1025
+  'settings.about.license': 'ISC 开源许可',                                // 2026-10-26 与仓库 LICENSE 对齐(原 CC BY-SA 4.0 是原型旧话)
   'settings.about.versionInfo': '版本信息',                                // :1022
   'settings.about.rowCurrent': '当前版本',                                 // :1023
   'settings.about.rowBuild': '构建日期',                                   // :1024
