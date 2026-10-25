@@ -3,7 +3,9 @@
 #
 # 干什么用：把 frontend/ 那一份界面构建出来、把 cmd/gui 与 cmd/service 两个可执行文件
 #   用 -tags gtk3 编出来（A2乙 那条构建线），按壳找文件的规矩摆进 deb，最后打成一个 .deb。
-# 怎么跑（仓库根）：bash build/linux/make-deb.sh 0.0.0-m5 → 产物 build/out/github-accel_<版本>_amd64.deb
+# 怎么跑（仓库根）：make package            → 版本号自动取（见下面 VERSION 那段）
+#                   make package VERSION=x  → 用你指定的号
+#                   bash build/linux/make-deb.sh 0.0.0-m5 → 产物 build/out/github-accel_<版本>_amd64.deb
 #
 # 会错在哪、出错时人看得见什么：
 #   ① 漏了 -tags gtk3 的构建，在这台装了 webkitgtk-6.0 的机器上照样成功，换台机器才炸——
@@ -21,7 +23,6 @@
 
 set -euo pipefail
 
-VERSION="${1:-${VERSION:-0.0.0-m5}}"
 BUILD_DATE="${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 PKG=github-accel
 MAINTAINER="${MAINTAINER:-hlep <hlep@localhost>}"
@@ -33,6 +34,21 @@ STAGE="$OUT/root"
 # GAC_TAGS 只为"故意编一条错构建线、看第 3 步那把闸拦不拦得住"这一次负向测留的口（见文末⑤）。
 # 默认值就是唯一那条构建线；这个口子不会放过坏包——第 3 步的 ldd 核对跟这里填什么无关。
 TAGS="${GAC_TAGS:-gtk3}"
+
+# 版本号只有一个家：仓库根的 VERSION 文件，存的是「下一个要打的号」。
+# 取号顺序：命令行参数 > 环境变量 > VERSION 文件（文件没有才落到最后那个保底字面量）。
+# 包**打成**之后（set -e，走到那里＝前六步全过）把文件往后推一格——不管这个包用的是自动号
+# 还是指定号，推的都是"那个号+1"，这样文件永远指向一个没用过的号，自动号不会跟旧包撞车。
+VERSION_FILE="$ROOT/VERSION"
+next_version() {
+	# 0.0.0-m5 → 0.0.0-m6；1.0.0 → 1.0.1。没有数字尾巴的号接 .1。
+	if [[ "$1" =~ ^(.*[^0-9])([0-9]+)$ ]]; then
+		printf '%s%d\n' "${BASH_REMATCH[1]}" "$(( ${BASH_REMATCH[2]} + 1 ))"
+	else
+		printf '%s.1\n' "$1"
+	fi
+}
+VERSION="${1:-${VERSION:-$(cat "$VERSION_FILE" 2>/dev/null || echo 0.0.0-m5)}}"
 
 say() { printf '\033[1m== %s\033[0m\n' "$*"; }
 die() { printf '出包停在这一步：%s\n' "$*" >&2; exit 1; }
@@ -118,9 +134,12 @@ rm -f "$DEB"
 dpkg-deb --build --root-owner-group "$STAGE" "$DEB"
 ls -la "$DEB"
 dpkg-deb --info "$DEB" | sed -n '1,30p'
+NEXT=$(next_version "$VERSION")
+printf '%s\n' "$NEXT" >"$VERSION_FILE"
 echo
 echo "产物：$DEB"
 echo "版本 $VERSION／构建时间 $BUILD_DATE 已注进 service（界面「关于」那一格读的就是它）"
+echo "下一个版本号已写进 $VERSION_FILE：$NEXT（不指定版本时自动用它）"
 echo
 cat <<'EOF'
 
