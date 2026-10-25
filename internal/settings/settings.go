@@ -69,7 +69,7 @@ func Dir() (string, error) {
 	if err != nil {
 		return "", errs.New(errs.CodeSettingsDir, nil, "取不到配置目录").WithCause(err)
 	}
-	return filepath.Join(dir, "github-accel"), nil
+	return filepath.Join(dir, "github-hlep"), nil
 }
 
 // Path 给出配置文件在哪儿。用标准库那一个函数，Linux/Windows 各给各的目录，

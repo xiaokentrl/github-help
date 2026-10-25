@@ -220,8 +220,8 @@ func TestPathAndBackupDirShape(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if filepath.Base(dir) != "github-accel" {
-		t.Fatalf("配置目录该叫 github-accel，got %q", dir)
+	if filepath.Base(dir) != "github-hlep" {
+		t.Fatalf("配置目录该叫 github-hlep（与项目名一致），got %q", dir)
 	}
 	p, err := Path()
 	if err != nil {
