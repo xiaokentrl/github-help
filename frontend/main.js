@@ -188,7 +188,8 @@ const tree = createTreeView({
   root: byId('tree'),
   t,
   handlers: {
-    onSelect: id => { state.selectedId = id; renderAll(); },
+    // 再点一次已选中的条目＝收起详情（此前详情页一旦打开就永不隐藏,用户 2026-10-26 拍板要能收）
+    onSelect: id => { state.selectedId = state.selectedId === id ? null : id; renderAll(); },
     onToggleItem: id => {
       const item = findItem(id);
       if (item) item.checked = !item.checked;

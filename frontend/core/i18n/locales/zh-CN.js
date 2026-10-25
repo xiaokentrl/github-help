@@ -208,6 +208,8 @@ export default {
   /* ---- 详情面板（原型 :1894-1991） ----
      七行指标的名字只在 DETAIL_METRICS 那张表里写一遍（:1894），这里跟着它一行一句；
      「需先检测生成候选 IP」跟挡路那句「请先检测生成候选 IP」（gate.apply.needDetect）是原型里就有的两种说法，别合。 */
+  'detail.noDataTitle': '这一条还没有数据',
+  'detail.noDataHint': '先「单独检测」，数据一到这里立刻同步',
   'detail.emptyTitle': '请选择左侧任意项查看详情',
   'detail.emptyHint': '勾选后可点击「检测全部」批量检测',
   'detail.m.currentIp': '当前写入 IP',

@@ -136,6 +136,16 @@ export function createDetailView({ root, t, handlers }) {
       empty.update({ title: t('detail.emptyTitle'), hint: t('detail.emptyHint') });
       return;
     }
+    // 没有数据就没有数据〔已定：2026-10-26 用户拍〕：没检测过、也不在跑的条目不给骨架屏,
+    // 给一句实话;一旦有了数据（lastCheck/bestIp 到位）或开始跑（detecting/applying）,
+    // 下一次 paint（每条事件都触发）这里自然切换到详情——数据是即时同步的,这条分支只挡"凭空的破折号"。
+    const hasData = !!item.lastCheck || !!item.bestIp ||
+      item.status === 'detecting' || item.status === 'applying';
+    if (!hasData) {
+      showShell('empty');
+      empty.update({ title: t('detail.noDataTitle'), hint: t('detail.noDataHint') });
+      return;
+    }
     showShell('detail');
 
     const cat = findCategoryOfItem(item.id);
