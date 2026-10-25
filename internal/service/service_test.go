@@ -422,6 +422,8 @@ type stack struct {
 func newStack(t *testing.T) *stack {
 	t.Helper()
 	dir := t.TempDir()
+	// 数据目录钉进临时目录:服务测试不许读写字用户真实配置(与 Updater/netChecker 同一条口径)
+	t.Setenv("GAC_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "hosts")
 	backup := filepath.Join(dir, "backup")
 	st := &stack{

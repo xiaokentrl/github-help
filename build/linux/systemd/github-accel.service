@@ -6,6 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# 数据目录显式钉死:系统服务没有 HOME/XDG_CONFIG_HOME,不钉则设置存不了、备份拿不到(实机撞到)
+Environment=GAC_CONFIG_DIR=/var/lib/github-hlep
 ExecStart=/opt/github-accel/github-accel-service
 # root 常驻〔已定:2026-10-25 权限模型〕——写 /etc/hosts 本来就要这一档;端点在 /run/github-accel
 Restart=on-failure

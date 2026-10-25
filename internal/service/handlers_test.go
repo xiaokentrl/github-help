@@ -587,6 +587,20 @@ func TestOpenHostsReleasesPermissionAndReportsOpener(t *testing.T) {
 	}
 }
 
+// 状态回执必须带 dataDir:设置与 hosts 备份都住在它下面,"关于我们"那一格读的就是它。
+// systemd 下服务没有 HOME,这里靠 newStack 钉的 GAC_CONFIG_DIR 保证有值(实机撞到的坑)。
+func TestStatusCarriesDataDir(t *testing.T) {
+	st := newStack(t)
+	got := st.svc.status()
+	if got.Service.DataDir == "" {
+		t.Fatal("状态回执没带 dataDir——数据目录那一格只会显示破折号")
+	}
+	want := filepath.Dir(st.svc.cfg.SettingsPath) + "/github-hlep"
+	if got.Service.DataDir != want {
+		t.Fatalf("dataDir 该是钉在临时目录下的那一个 %q，got %q", want, got.Service.DataDir)
+	}
+}
+
 // 权限放不开（文件不存在）必须当场拒，不许回一个"打开了"。
 func TestOpenHostsRefusesWhenFileMissing(t *testing.T) {
 	st := newStack(t)

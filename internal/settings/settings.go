@@ -65,7 +65,13 @@ type stored struct {
 
 // Dir 给出这个程序的用户数据目录（配置文件、hosts 备份都放它下面）。
 // 单开这一个出口是为了别处不必自己再拼一遍 os.UserConfigDir()——拼两份迟早拼出两个家。
+// 取值顺序：GAC_CONFIG_DIR（显式指定，systemd 单元用它在无 HOME 的环境里钉一个家，
+// 2026-10-26 实测：系统服务没有这套环境变量，不钉则设置存不了、备份目录拿不到、
+// 状态栏"数据目录"显示"—"）＞ os.UserConfigDir()（普通用户与开发态）。
 func Dir() (string, error) {
+	if explicit := os.Getenv("GAC_CONFIG_DIR"); explicit != "" {
+		return filepath.Join(explicit, "github-hlep"), nil
+	}
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", errs.New(errs.CodeSettingsDir, nil, "取不到配置目录").WithCause(err)

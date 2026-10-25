@@ -225,6 +225,18 @@ func TestPathAndBackupDirShape(t *testing.T) {
 	if filepath.Base(dir) != "github-hlep" {
 		t.Fatalf("配置目录该叫 github-hlep（与项目名一致），got %q", dir)
 	}
+
+	// GAC_CONFIG_DIR 显式指定＝systemd 服务在没有 HOME 的环境里钉家的那个口(实机撞到的坑)
+	t.Setenv("GAC_CONFIG_DIR", "/var/lib/github-hlep")
+	dir2, err := Dir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dir2 != "/var/lib/github-hlep/github-hlep" {
+		t.Fatalf("显式指定时应直接采用，got %q", dir2)
+	}
+	// 覆盖验完即清,后半段那些形状断言要在无覆盖的环境里跑
+	t.Setenv("GAC_CONFIG_DIR", "")
 	p, err := Path()
 	if err != nil {
 		t.Fatal(err)
