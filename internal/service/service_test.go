@@ -443,7 +443,7 @@ func newStack(t *testing.T) *stack {
 		Modes:       st.modes,
 		Flusher:     st.flush,
 		Broadcaster: st.events,
-		Updater:     &fakeUpdater{jsonBody: []byte(`{"tag_name":"vtest","body":"","assets":[]}`)},
+		Updater:     &fakeUpdater{jsonBody: []byte(`[{"tag_name":"vtest","body":"","assets":[]}]`)},
 		// netChecker 也给假件：用例不许拨真网(与 Updater 同一条口径);默认在线,netwatch 用例自己拨开关
 		// (这里给不了 svc 的字段——svc 在下面才 New,所以放 New 之后赋值)
 		HostsPath:    path,

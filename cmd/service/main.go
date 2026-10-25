@@ -39,7 +39,7 @@ func main() {
 		backupDir = ""
 	}
 
-	st, err := buildStack(hostsPath, backupDir, defaultSettingsPath())
+	st, err := buildStack(hostsPath, backupDir, defaultSettingsPath(), nil)
 	if err != nil {
 		log.Fatalf("起服务失败: %v", err)
 	}

@@ -274,7 +274,8 @@ func TestSaveSettingsRoundTrip(t *testing.T) {
 func TestUpdateHandlersRefuseToPretend(t *testing.T) {
 	st := newStack(t)
 	st.svc.cfg.Version = "0.0.0-m24"
-	release := `{"tag_name":"v0.0.0-m25","body":"## English\n- one\n- two\n","assets":[{"name":"github-accel_0.0.0-m25_amd64.deb","browser_download_url":"https://example.com/github-accel_0.0.0-m25_amd64.deb"}]}`
+	// 列表端点回的是数组(releases?per_page=1,含 prerelease)
+	release := `[{"tag_name":"v0.0.0-m25","body":"## English\n- one\n- two\n","assets":[{"name":"github-accel_0.0.0-m25_amd64.deb","browser_download_url":"https://example.com/github-accel_0.0.0-m25_amd64.deb"}]}]`
 	fake := &fakeUpdater{jsonBody: []byte(release)}
 	st.svc.cfg.Updater = fake
 
@@ -302,7 +303,7 @@ func TestUpdateHandlersRefuseToPretend(t *testing.T) {
 	}
 
 	// 没有新版:拒绝下载,不许把旧包当新包装
-	fake.jsonBody = []byte(`{"tag_name":"v0.0.0-m23","body":"","assets":[]}`)
+	fake.jsonBody = []byte(`[{"tag_name":"v0.0.0-m23","body":"","assets":[]}]`)
 	if _, err := st.svc.hDownloadUpdate(nil); err == nil {
 		t.Fatal("没有新版还让下载,就是骗人")
 	} else if code := errs.CodeOf(err); code != errs.CodeUpdateCheckFailed {
@@ -322,14 +323,14 @@ type fakeUpdater struct {
 	err       error
 }
 
-func (f *fakeUpdater) fetchJSON(string) ([]byte, error) {
+func (f *fakeUpdater) FetchJSON(string) ([]byte, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
 	return f.jsonBody, nil
 }
 
-func (f *fakeUpdater) fetchToFile(url, dest string) (int64, error) {
+func (f *fakeUpdater) FetchToFile(url, dest string) (int64, error) {
 	if f.err != nil {
 		return 0, f.err
 	}

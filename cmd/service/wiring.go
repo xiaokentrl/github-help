@@ -34,7 +34,7 @@ type stack struct {
 // buildStack 认清单、造引擎、接队列、挂方法。它不监听、不起队列，也不读设置之外的东西。
 //
 // hostsPath／settingsPath 为空就取本机默认；备份目录为空就交给引擎当"不存备份"。
-func buildStack(hostsPath, backupDir, settingsPath string) (*stack, error) {
+func buildStack(hostsPath, backupDir, settingsPath string, upd service.Updater) (*stack, error) {
 	catalog, err := menu.Load()
 	if err != nil {
 		return nil, fmt.Errorf("域名清单没认出来: %w", err)
@@ -53,7 +53,8 @@ func buildStack(hostsPath, backupDir, settingsPath string) (*stack, error) {
 		Version:      version,
 		BuildDate:    buildDate,
 		Broadcaster:  srv,
-	})
+
+		Updater: upd})
 	st.svc.Register(srv)
 	return st, nil
 }

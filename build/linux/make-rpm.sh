@@ -62,7 +62,7 @@ cp -a %{gac_stage}/lib/systemd/.          %{buildroot}/lib/systemd/
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload || true
   systemctl enable github-accel.service >/dev/null || true
-  systemctl start github-accel.service || true
+  systemctl restart github-accel.service || true
 fi
 
 %preun

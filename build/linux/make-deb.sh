@@ -74,7 +74,8 @@ set -e
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload
   systemctl enable github-accel.service >/dev/null || true
-  systemctl start github-accel.service || true
+  # restart 而不是 start:升级路径上旧进程要换血,不 restart 则升级完还跑着旧二进制
+  systemctl restart github-accel.service || true
 fi
 EOS
 cat >"$STAGE/DEBIAN/prerm" <<'EOS'

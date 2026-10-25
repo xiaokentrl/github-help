@@ -34,25 +34,29 @@ import (
 // 怎么回来：版本比较的判据在 compareVersions（纯函数，有逐例用例）；取数走 updater 接口，
 // 用例传假件，生产走 httpUpdater（真 http）。
 
-// updater 是取数口：检查一次 API 拉取、下载一次大文件拉取，分开两个动作，
+// Updater 是取数口：检查一次 API 拉取、下载一次大文件拉取，分开两个动作，
 // 用例才能各假各的（检查假、下载真写盘，两路互不拖累）。
-type updater interface {
-	// fetchJSON 拉一份 JSON 文本（检查用）。
-	fetchJSON(url string) ([]byte, error)
-	// fetchToFile 拉一个大文件落盘（下载用），回写到的字节数。
-	fetchToFile(url, dest string) (int64, error)
+// 导出而非包内私有：cmd/service 的接线用例要在真通道上喂假件（否则它真拨 GitHub）。
+type Updater interface {
+	// FetchJSON 拉一份 JSON 文本（检查用）。
+	FetchJSON(url string) ([]byte, error)
+	// FetchToFile 拉一个大文件落盘（下载用），回写到的字节数。
+	FetchToFile(url, dest string) (int64, error)
 }
 
 // httpUpdater 是生产那份：超时上限各自写死，HTTP(S)_PROXY 环境变量 Go 自己认。
 type httpUpdater struct{}
 
 const (
-	updateAPIBase   = "https://api.github.com/repos/xiaokentrl/github-help/releases/latest"
+	// 为什么不用 releases/latest:GitHub 的这个端点只返回正式版,prerelease 永远 404——
+	// 本项目的 m 系列版本号全带连字符,发版时全部标 prerelease,用它等于永远"查无更新"〔用户实机撞到〕。
+	// 改用列表端点取第一条:含 prerelease,按创建时间倒序,最新的一版就是它。
+	updateAPIBase   = "https://api.github.com/repos/xiaokentrl/github-help/releases?per_page=1"
 	updateTimeout   = 15 * time.Second
 	downloadTimeout = 10 * time.Minute
 )
 
-func (httpUpdater) fetchJSON(url string) ([]byte, error) {
+func (httpUpdater) FetchJSON(url string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -72,7 +76,7 @@ func (httpUpdater) fetchJSON(url string) ([]byte, error) {
 	return io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 }
 
-func (httpUpdater) fetchToFile(url, dest string) (int64, error) {
+func (httpUpdater) FetchToFile(url, dest string) (int64, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return 0, err
@@ -216,25 +220,26 @@ func (s *Service) hGetVersion(map[string]any) (any, error) {
 	return contract.VersionReply{Current: s.cfg.Version, BuildDate: s.cfg.BuildDate}, nil
 }
 
-// hCheckUpdate 无参数：问 GitHub latest release,比较版本,回 {latest, hasUpdate, log}。
+// hCheckUpdate 无参数：问 GitHub 的 release 列表（含 prerelease）取最新一条,比较版本,
+// 回 {latest, hasUpdate, log}。
 func (s *Service) hCheckUpdate(map[string]any) (any, error) {
-	raw, err := s.cfg.Updater.fetchJSON(updateAPIBase)
+	raw, err := s.cfg.Updater.FetchJSON(updateAPIBase)
 	if err != nil {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, nil, "连不上更新源：%v", err)
 	}
-	var rel releasePayload
-	if err := json.Unmarshal(raw, &rel); err != nil {
+	var rels []releasePayload
+	if err := json.Unmarshal(raw, &rels); err != nil {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, nil, "更新源回的那句看不懂：%v", err)
 	}
-	if rel.TagName == "" {
-		// 仓库一个 release 都没有（API 回 404/空）＝"没有可比较的最新版"，如实答，不是错
+	if len(rels) == 0 || rels[0].TagName == "" {
+		// 仓库一个 release 都没有（列表为空/404）＝"没有可比较的最新版"，如实答，不是错
 		return contract.UpdateCheckReply{Latest: "", HasUpdate: false, Log: []string{}}, nil
 	}
-	latest := strings.TrimPrefix(rel.TagName, "v")
+	latest := strings.TrimPrefix(rels[0].TagName, "v")
 	return contract.UpdateCheckReply{
 		Latest:    latest,
 		HasUpdate: compareVersions(latest, s.cfg.Version) > 0,
-		Log:       changelogLines(rel.Body),
+		Log:       changelogLines(rels[0].Body),
 	}, nil
 }
 
@@ -250,22 +255,25 @@ func (s *Service) hDownloadUpdate(map[string]any) (any, error) {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, map[string]any{"latest": c.Latest},
 			"已是最新版本（%s），没有包可下载", s.cfg.Version)
 	}
-	raw, err := s.cfg.Updater.fetchJSON(updateAPIBase)
+	raw, err := s.cfg.Updater.FetchJSON(updateAPIBase)
 	if err != nil {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, nil, "连不上更新源：%v", err)
 	}
-	var rel releasePayload
-	if err := json.Unmarshal(raw, &rel); err != nil {
+	var rels []releasePayload
+	if err := json.Unmarshal(raw, &rels); err != nil {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, nil, "更新源回的那句看不懂：%v", err)
 	}
-	url := pickAsset(rel.Assets)
+	if len(rels) == 0 {
+		return nil, errs.New(errs.CodeUpdateCheckFailed, nil, "更新源上还没有任何发布版")
+	}
+	url := pickAsset(rels[0].Assets)
 	if url == "" {
 		return nil, errs.New(errs.CodeUpdateCheckFailed, map[string]any{"platform": runtime.GOOS},
 			"这一版没有适合本平台（%s）的安装包", runtime.GOOS)
 	}
 	name := filepath.Base(strings.Split(url, "?")[0])
 	dest := filepath.Join(s.updatesDir(), name)
-	if _, err := s.cfg.Updater.fetchToFile(url, dest); err != nil {
+	if _, err := s.cfg.Updater.FetchToFile(url, dest); err != nil {
 		return nil, errs.New(errs.CodeUpdateDownloadFailed, map[string]any{"url": url},
 			"包没下载完：%v", err)
 	}

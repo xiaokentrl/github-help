@@ -64,7 +64,7 @@ func newHarness(t *testing.T) *harness {
 	}
 
 	backups := filepath.Join(dir, "backup")
-	st, err := buildStack(hostsPath, backups, settingsPath)
+	st, err := buildStack(hostsPath, backups, settingsPath, &fakeUpdater{})
 	if err != nil {
 		t.Fatalf("组装没起来: %v", err)
 	}
@@ -284,4 +284,16 @@ func remarshal(got any, into any) error {
 		return err
 	}
 	return json.Unmarshal(raw, into)
+}
+
+// fakeUpdater 是接线用例的假取数口：真通道上的 CheckUpdate／DownloadUpdate 不许真拨 GitHub
+// （真拨一次 15 秒超时,通道那头 2 秒就先判死,连接被收,后面每一问全变 040——实测抓到）。
+type fakeUpdater struct{}
+
+func (fakeUpdater) FetchJSON(string) ([]byte, error) {
+	return []byte(`[{"tag_name":"vtest","body":"","assets":[]}]`), nil
+}
+
+func (fakeUpdater) FetchToFile(url, dest string) (int64, error) {
+	return 0, nil
 }

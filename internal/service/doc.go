@@ -83,7 +83,7 @@ type Config struct {
 	Opener Opener
 	// Updater 是"检查更新／下载更新"那两步的取数口，留空用 update.go 的真 http。
 	// 用例传假件：检查喂固定 JSON，下载真写盘——更新这一路不许把用例挂到真网络上。
-	Updater updater
+	Updater Updater
 	// Broadcaster 是事件出口，留空就是不往外推（cmd 侧没建通道时的形状）。
 	Broadcaster Broadcaster
 	// HostsPath 只给权限自检那一句话用（写不写得动问的是路径，不是引擎）。留空取 hosts.DefaultPath()。
