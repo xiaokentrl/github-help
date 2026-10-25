@@ -1,0 +1,153 @@
+# 发版：推 v* 标签（或手动 dispatch）→ 云端出四种包 → 挂 GitHub Release。
+#
+# 四种包全部在 ubuntu-24.04 一台 runner 上出（对齐 ci.yml 工具链口径）：
+#   deb／rpm／AppImage 走 build/linux/ 三个脚本，Windows zip 走 build/windows/ 的交叉编译线
+#   （GOOS=windows，无需 windows runner）。rpm 的 rockylinux:9 容器在 runner 的 docker 里跑，
+#   脚本里那条"清空代理变量"在 runner 上同样无害。
+# 版本号唯一真源＝标签（v0.0.0-m13 → 0.0.0-m13）；VERSION 文件是本地出包的取号器，
+#   不参与云端核对——两条链各用各的源，标签错了直接红在这里。
+# 发布正文＝仓库根 release-notes.md（phpo 同款双语模板，scripts/gen-release-notes.sh 起草、
+#   人工定稿）。缺文件即红：发布动作对不存在的 body_path 只会静默回落默认正文，
+#   那等于发一份没有说明的 Release；正文里没有这个版本号同样红（说明定稿的不是这一版）。
+# 版本带连字符（0.0.0-m13 这类里程碑号）自动标 prerelease。
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（不含 v 前缀，如 0.0.0-m13）；留空取仓库根 VERSION 文件"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.27"
+  NODE_VERSION: "24"
+
+jobs:
+  package:
+    name: Package (deb / rpm / AppImage / win)
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install GTK3 / webkit2gtk toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev \
+            build-essential pkg-config
+
+      # 标签推送 → 取标签；手动 dispatch → 取输入、留空回落 VERSION 文件。这里一处裁决，后面只传参。
+      - name: Resolve version
+        id: ver
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            V="${GITHUB_REF_NAME#v}"
+            TAG="$GITHUB_REF_NAME"
+          else
+            V="${{ inputs.version }}"
+            if [ -z "$V" ]; then
+              V="$(cat VERSION 2>/dev/null || true)"
+            fi
+            TAG="v$V"
+          fi
+          if [ -z "$V" ]; then
+            echo "::error::取不到版本号：标签事件不该走到这里；dispatch 请填 version 或提交 VERSION 文件"
+            exit 1
+          fi
+          echo "version=$V" >>"$GITHUB_OUTPUT"
+          echo "tag=$TAG" >>"$GITHUB_OUTPUT"
+          echo "发版 $TAG（版本 $V）"
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Package deb / rpm / AppImage / win
+        run: |
+          set -euo pipefail
+          V="${{ steps.ver.outputs.version }}"
+          bash build/linux/make-deb.sh "$V"
+          bash build/linux/make-rpm.sh "$V"
+          bash build/linux/make-appimage.sh "$V"
+          bash build/windows/make-win.sh "$V"
+
+      - name: Generate checksums.txt
+        run: |
+          set -euo pipefail
+          cd build/out
+          find . -maxdepth 1 -type f \( -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' -o -name '*.zip' \) \
+            -exec sha256sum {} \; | sed 's|\./||' > checksums.txt
+          cat checksums.txt
+
+      # 多行 glob 在"一件都没匹配到"时才 error——各格式文件名变了会在这里红，而不是静默漏发。
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: |
+            build/out/*.deb
+            build/out/*.rpm
+            build/out/*.AppImage
+            build/out/*.zip
+            build/out/checksums.txt
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: out
+
+      - name: Check release notes present and matching this version
+        run: |
+          set -euo pipefail
+          V="${{ needs.package.outputs.version || github.ref_name }}"
+          V="${V#v}"
+          if [ ! -s release-notes.md ]; then
+            echo "::error::仓库根没有 release-notes.md（或它是空文件），Release 正文会空。"
+            echo "::error::发布前跑 bash scripts/gen-release-notes.sh 起草，定稿后随版本一起提交。"
+            exit 1
+          fi
+          grep -q "$V" release-notes.md || {
+            echo "::error::release-notes.md 里没有版本号 $V——定稿的不是这一版，先补上再推标签。"
+            exit 1
+          }
+          echo "release-notes.md 就绪（含 $V）"
+
+      # 标签不存在时该动作会在本次构件所在的提交上创建它（dispatch 手动发版的路径）。
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', needs.package.outputs.version || inputs.version) }}
+          name: github-accel ${{ github.ref_name }}
+          body_path: ${{ github.workspace }}/release-notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            out/*

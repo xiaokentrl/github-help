@@ -17,7 +17,7 @@ NEXTVER := $(shell v='$(CURVER)'; [[ $$v =~ ^(.*[^0-9])([0-9]+)$$ ]] \
 	&& printf '%s%d' "$${BASH_REMATCH[1]}" "$$(( $${BASH_REMATCH[2]} + 1 ))" \
 	|| printf '%s.1' "$$v")
 
-.PHONY: package deb rpm appimage win frontend build test vet fmt check clean
+.PHONY: package deb rpm appimage win notes frontend build test vet fmt check clean
 
 package:
 	bash build/linux/make-deb.sh $(CURVER)
@@ -42,6 +42,11 @@ appimage:
 win:
 	bash build/windows/make-win.sh $(CURVER)
 	printf '%s\n' $(NEXTVER) > $(VERSION_FILE)
+
+# 起草发版说明（phpo 同款双语模板；素材＝上一颗 v 标签以来的 git 提交，人工定稿后随版本提交，
+# 推 v<版本> 标签触发 Release 工作流——四件包在云端出、说明挂成 Release 正文）
+notes:
+	bash scripts/gen-release-notes.sh
 
 # 前端依赖与产物（首次 / 依赖变了才需要）
 frontend:
