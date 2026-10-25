@@ -1,0 +1,24 @@
+/* Tag 的样式：两族规则逐字照原型（:249 的 .tag 与 :297-300 的 .q-kind），只把白字换成配对变量。
+   会错在哪：原型这里写的是 color:#fff，而五套深色各有一条点名覆盖把它换成 --on-green（:649）。
+             新前端把这一支直接写成 var(--on-green)：晨光白那套它就是 #fff，深色那五套它就是各自主色上的字色，
+             于是六套的外观跟原型一模一样，而"每套主题再补一条 .tag 覆盖"这件事再也没有了。
+   怎么回来：件里出现裸色值 CI 红；这里引的 --on-green 若哪套主题没给，未定义即红那条门禁也红（8.5 第 1、4 条）。 */
+
+.tag{
+  display:inline-block;font-size:var(--fs-legacy-tag);
+  background:var(--green);color:var(--on-green);
+  border-radius:var(--radius-xs);padding:1px 5px;vertical-align:middle;
+}
+
+.q-kind{
+  display:inline-block;font-size:var(--fs-legacy-tag);
+  padding:0 4px;border-radius:var(--radius-xs);margin-right:4px;
+  line-height:1.4;vertical-align:1px;
+}
+.q-kind.detect{background:var(--gold-soft);color:var(--gold-text)}
+.q-kind.apply{background:var(--primary-soft);color:var(--primary)}
+.q-kind.restore{background:var(--amber-soft);color:var(--amber)}
+
+/* 新用例这一档：11px 起（第 10 节第 3 条），旧的两族不许跟着改，改了逐屏比对就对不上。 */
+.tag.tag-md{font-size:var(--fs-xs)}
+.q-kind.tag-md{font-size:var(--fs-xs)}

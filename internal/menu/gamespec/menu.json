@@ -1,0 +1,50 @@
+{
+  "id": "gamespec",
+  "name": "特定游戏专项",
+  "order": 6,
+  "items": [
+    {
+      "id": "gs-pubg",
+      "name": "绝地求生",
+      "domains": [
+        "pubg.com"
+      ]
+    },
+    {
+      "id": "gs-bf",
+      "name": "战地系列",
+      "domains": [
+        "battlefield.com",
+        "ea.com"
+      ]
+    },
+    {
+      "id": "gs-r6",
+      "name": "彩虹六号",
+      "domains": [
+        "ubisoft.com"
+      ]
+    },
+    {
+      "id": "gs-ff14",
+      "name": "FF14 国际版",
+      "domains": [
+        "finalfantasyxiv.com"
+      ]
+    },
+    {
+      "id": "gs-tark",
+      "name": "逃离塔科夫",
+      "domains": [
+        "escapefromtarkov.com"
+      ]
+    },
+    {
+      "id": "gs-gta",
+      "name": "GTA V",
+      "domains": [
+        "rockstargames.com"
+      ]
+    }
+  ]
+}

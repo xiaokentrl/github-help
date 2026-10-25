@@ -1,0 +1,21 @@
+/* SettingRow 的样式：行的形状照原型 :381（.set-row 那一条），字号照 :377-378（标题 13 / 说明 12）。
+   会错在哪：原型这三段散在每张 set-card 里，"禁用整行灰"那条是写在卡片上的（:374 .set-card.disabled），
+             谁忘了给卡片挂那个类，就出现"控件灰了、说明还亮着"。
+   怎么回来：这一件把灰度收在自己身上（.set-row.is-disabled），值仍是原型那个 .55——
+             只有透明度这一支属于行，卡片别的部分不受影响。 */
+
+.set-row{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);
+}
+.sr-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sr-title{font-size:var(--fs-md);font-weight:600;color:var(--text);cursor:pointer}
+.sr-title.sr-plain{cursor:default}
+/* 标题前那个装饰符：字色照原型 .set-card-title .ico（:376），它是纯装饰，读屏跳过（件里挂了 aria-hidden） */
+.sr-title .ico{color:var(--primary)}
+.sr-desc{
+  margin:0;font-size:var(--fs-sm);color:var(--text-3);line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.set-row.is-disabled .sr-title,
+.set-row.is-disabled .sr-desc{opacity:.55}

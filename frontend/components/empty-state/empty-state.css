@@ -1,0 +1,22 @@
+/* EmptyState 的样式：两档形状逐字照原型（详情那档 :199-201、树/队列那档 :89），只把写死的底色换成变量。
+   会错在哪：原型 .detail-empty .big 的底是 #eef1f6，五套深色各补一条点名覆盖（:555）才不是一块白斑。
+   怎么回来：这里走 var(--mute-bg)——晨光白它正是 #eef1f6，深色五套各自指到本套的 --band，
+             于是"三处空态共用一件"这件事在样式层也成立，不需要再为哪一档补覆盖。 */
+
+.detail-empty{
+  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--text-3);gap:10px;padding:var(--sp-6) var(--sp-5);
+}
+.detail-empty .big{
+  width:52px;height:52px;border-radius:var(--radius-xl);background:var(--mute-bg);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-5xl);color:var(--text-3);
+}
+.detail-empty .hint{font-size:var(--fs-sm)}
+
+/* 树里、队列里那一条矮的：不铺满高度，居中一行字（原型 :89） */
+.tree-empty{
+  padding:40px 20px;text-align:center;color:var(--text-3);font-size:var(--fs-sm);
+  display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);
+}
+.tree-empty .big{display:none}
+.tree-empty .hint{font-size:var(--fs-sm)}

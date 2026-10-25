@@ -1,0 +1,40 @@
+/* DragHandle 的样式：两套形状逐字照原型（侧栏那道 :96-99、队列那道 :193-196），只把写死的白换成变量。
+   会错在哪：原型这两处各写一遍，悬停与拖动中的颜色、中间那道线的尺寸都不完全一样；
+             另外把手只有 6px 宽，鼠标偏一点就点不中——第 6 节那条"热区下限 24px"在这儿不能照搬，
+             往外扩到 24 会盖住行末那颗"还原"按钮和树行右边缘，点哪都变成拖宽度。
+   怎么回来：视觉仍是 6px（跟原型逐屏对得上），可点范围用一层透明的 ::after 补到 12px；
+             中间那道线的反白走 --mark，深色五套不必再补一条 :hover::before 覆盖。 */
+
+.sidebar-resizer{
+  width:6px;flex:none;background:var(--border);cursor:col-resize;position:relative;
+  transition:background var(--dur-fast);user-select:none;touch-action:none;
+}
+.sidebar-resizer::before{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:2px;height:34px;border-radius:var(--radius-mini);background:var(--text-3);
+  transition:background var(--dur-fast);
+}
+/* 透明的那一层只负责"点得中"，不改外观，也不往邻居身上多盖 */
+.sidebar-resizer::after{
+  content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);
+  width:12px;height:100%;
+}
+.sidebar-resizer:hover,.sidebar-resizer.dragging{background:var(--primary)}
+.sidebar-resizer:hover::before,.sidebar-resizer.dragging::before{background:var(--mark)}
+
+.resizer{
+  height:6px;flex:none;background:var(--border);cursor:row-resize;position:relative;
+  transition:background var(--dur-fast);user-select:none;touch-action:none;
+}
+.resizer::before{
+  content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:34px;height:2px;border-radius:var(--radius-mini);background:var(--text-3);
+  transition:background var(--dur-fast);
+}
+.resizer::after{
+  content:"";position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);height:12px;
+}
+.resizer:hover,.resizer.dragging{background:var(--primary)}
+.resizer:hover::before,.resizer.dragging::before{background:var(--mark)}
+
+/* 键盘：把手能 Tab 到，焦点环由 base.css 那条全站规则画，这里不再各画一遍。 */

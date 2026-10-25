@@ -1,0 +1,42 @@
+{
+  "id": "steam",
+  "name": "Steam",
+  "order": 4,
+  "items": [
+    {
+      "id": "st-store",
+      "name": "商店",
+      "domains": [
+        "store.steampowered.com"
+      ]
+    },
+    {
+      "id": "st-comm",
+      "name": "社区",
+      "domains": [
+        "steamcommunity.com"
+      ]
+    },
+    {
+      "id": "st-cdn",
+      "name": "CDN",
+      "domains": [
+        "cdn.steampowered.com"
+      ]
+    },
+    {
+      "id": "st-dl",
+      "name": "下载节点",
+      "domains": [
+        "ext1-hkg1.steamserver.net"
+      ]
+    },
+    {
+      "id": "st-img",
+      "name": "图片与头像",
+      "domains": [
+        "avatars.steamstatic.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+/* Button 的样式：规则逐字照原型 :52-64，只把写死的颜色换成变量（第 7 节那条铁律只管颜色，
+   尺寸与间距照原型原值——改了它们，F3 那句"逐屏零差异"立刻就不成立了）。
+   会错在哪：这里再出现一个 #ffffff，换到第五套深色就是一处白底白字，得多一条点名覆盖。
+   怎么回来：件目录里每个 .css 出现裸色值，CI 当场红（8.5 第 1 条）。
+   （这句原来写的是 glob 形式 components 下所有 .css——注释里那个「星号斜杠」会把注释当场截断，
+     后半句话就变成样式了，构建时 esbuild 报的就是这一条。） */
+
+.btn{
+  height:var(--ctl-md);padding:0 12px;border-radius:var(--radius-sm);
+  border:1px solid var(--border-strong);background:var(--ctl);color:var(--text);
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  white-space:nowrap;transition:background var(--dur-fast),border-color var(--dur-fast),color var(--dur-fast);
+}
+.btn:hover:not(:disabled){background:var(--hov)}
+.btn:active:not(:disabled){transform:translateY(.5px)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.btn.primary:hover:not(:disabled){background:var(--primary-strong)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.btn.ghost:hover:not(:disabled){background:var(--chip-bg)}
+.btn.danger{color:var(--red)}
+.btn.danger:hover:not(:disabled){background:var(--red-soft)}
+
+/* 小尺寸（原型 .btn-sm :62）：行内「还原」那一类。字色/边线走变量，深色各套自己给（--line-soft-w）。 */
+.btn.btn-sm{height:var(--ctl-sm);padding:0 8px;font-size:var(--fs-xs-2);margin-left:8px;font-weight:500}
+.btn.btn-sm.restore{color:var(--amber);border-color:var(--line-soft-w)}
+.btn.btn-sm.restore:hover:not(:disabled){background:var(--amber-soft)}
+
+/* 禁用与加载中：4.1 要求这两种都得说清原因——原因由调用方用 title 传进来（件不持有文案）。 */
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.is-busy{opacity:.7;cursor:wait}
+.btn .btn-spin{display:none}
+.btn.is-busy .btn-spin{
+  display:inline-block;width:9px;height:9px;flex:none;
+  border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;
+  animation:spin .8s linear infinite;
+}

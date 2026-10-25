@@ -1,0 +1,10 @@
+/* 晨光白（styles/themes/light/）：干什么用——它是本项目的默认配色，也就是 tokens.css 里那批值本身。
+   会错在哪：把这 21 支颜色在这里再抄一遍，就成了"同一个数两处存"——改一处忘另一处，浅色立刻分叉。
+   怎么回来：这里只放两样 tokens.css 里没有的：这一套自己的 color-scheme，和四支契约变量。
+   契约变量每套主题必须各给一遍（组件库规划.md 第 6 节第 4 条），晨光白不给就少一套。
+   白字压 --primary 实测 5.17，所以你拍的「对比度乙」里它不参与那笔账——写法就是白字。 */
+html[data-theme="light"]{
+  color-scheme:light;
+  --on-primary:#ffffff; --on-green:#ffffff;
+  --focus-ring:#2563eb; --focus-glow:#eaf0fe;
+}

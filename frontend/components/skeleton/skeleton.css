@@ -1,0 +1,24 @@
+/* Skeleton 的样式：那道扫光逐字照原型 :439，只把两道渐变的颜色换成变量（--skel-a / --skel-b）。
+   会错在哪：原型这里把 60×12 手写在样式里，六套主题各补一条点名覆盖（:603）才不换色；
+             而且一旦真实内容比 60px 宽（例如 IP 变长），骨架跟内容对不上，替换那一刻整块跳版。
+   怎么回来：三档的宽高全部引尺寸令牌——--sp-* 凑出 60px、--fs-sm 凑出 12px，
+             改令牌就是改骨架，不会出现"骨架一套数、内容另一套数"；
+             深色各套不必再补规则，因为颜色本来就指到那套主题的 --skel-a/--skel-b。 */
+
+.skeleton{
+  display:inline-block;height:var(--fs-sm);width:calc(var(--sp-6) * 2 + var(--sp-3));
+  background:linear-gradient(90deg,var(--skel-a) 25%,var(--skel-b) 37%,var(--skel-a) 63%);
+  background-size:400% 100%;border-radius:var(--radius-ctl);
+  animation:shimmer 1.2s ease-in-out infinite;   /* 循环周期不在第 6 节那三档里（那三档只管过渡），照原型 1.2s */
+}
+
+/* 详情指标那一格：60×12（= 24+24+12 与 12，全是尺寸令牌凑出来的，见文件头） */
+.skeleton-value{height:var(--fs-sm);width:calc(var(--sp-6) * 2 + var(--sp-3))}
+/* 一整行文字：高度跟着小字走，宽度交给容器，免得又出现手填宽 */
+.skeleton-line{height:var(--fs-sm);width:100%}
+/* 整块占位：高度用控件大档，宽度交给容器 */
+.skeleton-block{height:var(--ctl-lg);width:100%}
+
+.skeleton-wrap{display:inline-flex;flex-direction:column;align-items:stretch;gap:var(--sp-1)}
+/* 整行/整块两档要跟着容器宽：外层得占满一块，否则 inline-flex 收缩到 0，那两档等于不画（件里按档位加上这个类） */
+.skeleton-wrap-fluid{display:flex;width:100%}

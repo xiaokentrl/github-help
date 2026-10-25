@@ -1,0 +1,19 @@
+/* Checkbox 的样式：方框本体照原型 :134-137，一个颜色都没写死。
+   干什么用：看得见的还是那个 14×14 的 span，可点范围用一层看不见的罩子扩到 24×24。
+   会错在哪：直接把方框放大成 24，树的列宽会跟着歪（逐屏比对立刻现形）；
+             只扩罩子不扩视觉，才是既守住热区又守住外观的那条路。
+   怎么回来：那颗真 input 藏进罩子里，焦点环画在 .cb 上（跟 switch 同一类毛病）。 */
+.cb-wrap{position:relative;display:inline-flex;width:14px;height:14px;flex:none;cursor:pointer}
+.cb-wrap::after{content:"";position:absolute;left:50%;top:50%;width:var(--hit-min);height:var(--hit-min);transform:translate(-50%,-50%)}
+.cb-wrap.is-disabled{cursor:not-allowed}
+.cb-src{position:absolute;left:0;top:0;width:14px;height:14px;margin:0;opacity:0}
+.cb{
+  width:14px;height:14px;flex:none;border:1.5px solid var(--cb-line);border-radius:var(--radius-xs);
+  background:var(--ctl);display:inline-flex;align-items:center;justify-content:center;
+  transition:background var(--dur-fast),border-color var(--dur-fast);
+}
+.cb[data-state="checked"],.cb[data-state="indeterminate"]{background:var(--primary);border-color:var(--primary)}
+.cb[data-state="checked"]::after{content:"";width:7px;height:4px;border-left:1.8px solid var(--mark);border-bottom:1.8px solid var(--mark);transform:rotate(-45deg) translate(0,-1px)}
+.cb[data-state="indeterminate"]::after{content:"";width:7px;height:1.8px;background:var(--mark);border-radius:1px}
+.cb-src:focus-visible + .cb{outline:2px solid var(--focus-ring);outline-offset:1px;box-shadow:0 0 0 6px var(--focus-glow)}
+.cb-src:disabled + .cb{opacity:.45}

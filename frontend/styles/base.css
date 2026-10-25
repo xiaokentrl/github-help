@@ -1,0 +1,70 @@
+/* 基础层：干什么用——把"整张纸"先铺好（盒模型、字体、滚动条、减弱动效、焦点环默认值）。
+   这一层只放所有界面都遵守的那几条，不认识任何件、也不认识任何主题。
+   会错在哪：件在这里之外各自 reset 一次字体或滚动条，两平台的宽度就分叉了
+   （Windows 默认滚动条 17 px、Linux 各家不同，同一行内容会跟着位移）。
+   怎么回来：本文件里出现硬写颜色即 CI 红（门禁见 组件库规划.md 8.5 第 1 条）；
+   字号、字色、时长一律引 tokens.css。 */
+
+*,
+*::before,
+*::after{box-sizing:border-box}                    /* 原型 :19 */
+
+html,body{
+  height:100%;margin:0;
+  /* 一个族回退链走到底，中文不许在某一平台单写某支字体（第 6 节第 2 条）。值逐字照原型 :20。 */
+  font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:var(--fs-md);color:var(--text);background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font-family:inherit;font-size:var(--fs-md)}   /* 原型 :21，加了 textarea */
+
+/* 焦点环：全站一套，件不再各画一遍（组件库规划.md 第 6 节最后一条）。
+   2 px 实线（--focus-ring）+ 3 px 外晕（--focus-glow）：实线占 1–3 px，外晕铺到 6 px 才能露出 3 px。
+   两支都由主题各给一套值，所以深色下不会看见"白环压深底"那种看不见的光标。
+   会错在哪：件若在 :focus 上自己画 box-shadow，会把这条顶掉——所以件只准引这两支变量，不准自己配颜色。 */
+:focus{outline:none}
+:focus-visible{
+  outline:2px solid var(--focus-ring);
+  outline-offset:1px;
+  box-shadow:0 0 0 6px var(--focus-glow);
+}
+
+/* 自绘滚动条（原型 :434-437）：两平台同一观感，10 px 不退回系统默认。 */
+::-webkit-scrollbar{width:var(--sb-w);height:var(--sb-w)}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{
+  background:var(--sb-thumb);border-radius:var(--radius-sm);
+  border:2px solid transparent;background-clip:content-box;
+}
+::-webkit-scrollbar-thumb:hover{background:var(--sb-thumb-hov);background-clip:content-box}
+
+/* 六组动画集中在这儿（原型里散在 :129、:164、:271、:340、:342、:440 六处）。
+   干什么用：件只按名字用，不再各自抄一份 keyframes。
+   会错在哪：同一组动画抄两份，改一份另一份不动，界面上就有两处"呼吸"不同步。
+   怎么回来：名字照原型保留（goldSlide/pulse/spin/fadeIn/popIn/shimmer），
+   跟那份冻结基线一比对得上；上面那两条减弱动效钩子会把它们一起按住。 */
+@keyframes goldSlide{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 var(--pulse-ring)}50%{box-shadow:0 0 0 4px transparent}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* 减弱动效：两条钩子都在（原型 :442-448 的系统偏好、:449-458 的手动开关）。
+
+   上一版手动那条只点名了 8 个选择器——新增一组动画就漏一组。这里改成全局生效，
+   于是"6 组 keyframes 都归它管"这句话不用再有人手工补名单。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+body.reduce-motion,
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after{
+  animation:none !important;
+  transition-duration:.01ms !important;
+}

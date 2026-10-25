@@ -1,0 +1,41 @@
+/* ProgressBar 的样式：三档形状逐字照原型（全局线 :77-83、块里的条 :410-414、评分条 :251-252），
+   只把写死的底色与渐变换成变量。
+   会错在哪：① 全局线的位置原型是用 `top:100%` 贴着工具栏下沿写的（:76 那句注释就是 C3 修完留下的教训），
+               谁哪天图省事改成 `top:52px`，工具栏一变高这条线就压在按钮上；
+             ② 时长原来散落着 .15s/.2s/.3s 三个值，这里收进三档令牌（第 6 节那条：新组件不许写第四个值）。
+   怎么回来：件里出现裸色值 CI 红（8.5 第 1 条）；这条线的定位只允许 `top:100%`，不写像素。 */
+
+/* 第一档：工具栏下面那根 3px 全局线（容器自己就是线，绝对贴着父元素下沿） */
+.global-progress{
+  position:absolute;top:100%;left:0;right:0;height:3px;
+  background:transparent;z-index:var(--z-progress);pointer-events:none;
+  opacity:0;transition:opacity var(--dur-base) ease, background var(--dur-base) ease;overflow:hidden;
+}
+.global-progress.show{opacity:1;background:var(--track-bg)}
+.global-progress i{display:block;height:100%;width:0;background:var(--grad-progress);transition:width var(--dur-slow) ease}
+
+/* 第二档：块里的 6px 条 + 下面那行小字（显隐靠容器上的 .show，跟原型一致） */
+.dl-progress{display:none;margin-top:10px}
+.dl-progress.show{display:block}
+.dl-bar{height:6px;background:var(--mute-bg);border-radius:var(--radius-xs);overflow:hidden;margin-bottom:6px}
+.dl-bar i{
+  display:block;height:100%;width:0;border-radius:var(--radius-xs);
+  background:var(--grad-progress);transition:width var(--dur-base) ease;
+}
+.dl-text{font-size:var(--fs-xs-2);color:var(--text-3);display:flex;justify-content:space-between;gap:var(--sp-3)}
+
+/* 第三档：候选表行内那根 46×5 的评分条（行内元素，跟着文字走） */
+.score-bar{
+  display:inline-block;width:46px;height:5px;background:var(--mute-bg);
+  border-radius:var(--radius-xs);overflow:hidden;vertical-align:middle;margin-right:7px;
+}
+.score-bar i{display:block;height:100%;background:var(--grad-score);border-radius:var(--radius-xs)}
+
+/* 不确定态：不知道还剩几项时，条子铺满并来回扫——扫光用的是骨架屏那道 shimmer（base.css 里那一份），
+   不另开第二个动画，免得将来两处各改各的。减弱动效下由全局那条规则停下扫描，停在中间一段。 */
+.global-progress.is-indet i,
+.dl-progress.is-indet .dl-bar i{
+  width:100%;background-size:200% 100%;animation:shimmer 1.2s ease-in-out infinite;
+}
+.global-progress.is-indet{opacity:1;background:var(--track-bg)}
+.dl-progress.is-indet .dl-bar i{border-radius:var(--radius-xs)}

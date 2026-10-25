@@ -1,0 +1,28 @@
+{
+  "id": "custom",
+  "name": "自定义 / 订阅源",
+  "order": 11,
+  "items": [
+    {
+      "id": "cu-manual",
+      "name": "手动映射",
+      "domains": [
+        "自定义域名"
+      ]
+    },
+    {
+      "id": "cu-gh520",
+      "name": "GitHub520",
+      "domains": [
+        "raw.hellogithub.com"
+      ]
+    },
+    {
+      "id": "cu-china",
+      "name": "china-hosts",
+      "domains": [
+        "github.com/zhouzhehong/china-hosts-accelerator"
+      ]
+    }
+  ]
+}

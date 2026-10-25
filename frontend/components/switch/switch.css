@@ -1,0 +1,21 @@
+/* Switch 的样式：照原型 :387-393。
+   干什么用：视觉仍是 36×20（跟原型逐屏对得上），但可点范围补到 24 高——整颗的上下各留 2 px。
+   会错在哪：那颗真 input 是 0×0 的（原型就这么藏它），焦点环画在它身上等于看不见；
+             所以焦点样式必须画到 .slider 上，这是 4.4 那条"焦点可见"的落点。
+   怎么回来：这里出现裸色值即 CI 红；圆点那支 --knob 原型从不按主题覆盖，所以基础层给一次就够。 */
+.switch{position:relative;display:inline-flex;align-items:center;width:36px;height:var(--hit-min);flex:none}
+.switch input{opacity:0;width:0;height:0;margin:0;position:absolute;left:0}
+.switch .slider{
+  position:absolute;left:0;top:2px;width:36px;height:20px;cursor:pointer;
+  background:var(--rail);border-radius:var(--radius-pill);transition:background var(--dur-base);
+}
+.switch .slider::before{
+  content:"";position:absolute;height:16px;width:16px;left:2px;bottom:2px;
+  background:var(--knob);border-radius:50%;transition:transform var(--dur-base);box-shadow:var(--shadow-knob);
+}
+.switch input:checked + .slider{background:var(--primary)}
+.switch input:checked + .slider::before{transform:translateX(16px)}
+.switch input:disabled + .slider{opacity:.45;cursor:not-allowed}
+.switch input:focus-visible + .slider{
+  outline:2px solid var(--focus-ring);outline-offset:1px;box-shadow:0 0 0 6px var(--focus-glow);
+}

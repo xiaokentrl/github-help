@@ -1,0 +1,35 @@
+{
+  "id": "ms",
+  "name": "微软 / Xbox",
+  "order": 8,
+  "items": [
+    {
+      "id": "ms-store",
+      "name": "Microsoft Store",
+      "domains": [
+        "storeedgefd.dsx.mp.microsoft.com"
+      ]
+    },
+    {
+      "id": "ms-xbox",
+      "name": "Xbox Live",
+      "domains": [
+        "xboxlive.com"
+      ]
+    },
+    {
+      "id": "ms-winup",
+      "name": "Windows Update",
+      "domains": [
+        "update.microsoft.com"
+      ]
+    },
+    {
+      "id": "ms-office",
+      "name": "Office",
+      "domains": [
+        "officeapps.live.com"
+      ]
+    }
+  ]
+}

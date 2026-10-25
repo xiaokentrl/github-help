@@ -1,0 +1,69 @@
+<!doctype html>
+<!-- 外框骨架。干什么用：只放"从头到尾不会因为数据而变的那些壳"——顶栏、横幅、工具栏、左右两栏的壳、
+     队列的壳、状态栏、托盘胶囊、三处遮罩；里面要填什么一律由 views 画。
+     id 与 class 逐字照原型 :655-754，为的是"跟原型比得出零差异"那条判据还能用 grep 逐行对。
+   会错在哪：① 规矩是「只有会被 views 填的容器留在这儿，内容一个字不留」。
+                队列头那九颗钮与 #queueList、设置中心与主题弹窗那两块遮罩、顶栏／横幅／工具栏／状态栏／侧栏脚／
+                托盘胶囊这六块，都是按这一条搬进 views 的：留着只会两份源——外框一份中文、语言文件一份中文，
+                切语言时改一处漏一处；
+             ② 这里的每一个 id 都必须有人认：tests/structure.test.mjs 那条门禁现在两个方向都查
+                （JS 点名的 id 这里必须有壳；这里留的壳 JS 必须点名）。多留一个没人认的壳＝一处死 DOM，
+                半年后没人敢删；少留一个，views 那边拿到 null，界面少一块而只在运行时炸；
+             ③ 原型的假窗口按钮 .win-btns（:679）不搬：真窗口的最小化／最大化／关闭由 GTK 与 Windows 画，
+                界面自己画三颗等于给用户三颗假的；
+             ④ 确认框的遮罩（原型 #modalMask）与 #toast 不在这里：那两件由 components/confirm-dialog
+                与 components/toast 自己造 DOM，写在这儿会出现两个同名 id；
+             ⑤ 工具栏里那条全局进度线（原型 :704）与两道拖动把手（:720 的 #sidebarResizer、:725 的 #queueResizer）
+                也不在这里：那三件各自有 owning 件——进度线由 components/progress-bar 建、由 views/toolbar 贴到
+                那一行末尾，把手由 components/drag-handle 建、由 main.js 插在 #sidebar 之后与 #queuePanel 之前。
+                留在外面＝同一个元素两份源，件里的 class 名与这里的 id 早晚会漂开；
+             ⑥ <head> 里那两句中文不在"外框不许有文案"这条门禁里：<title> 是文档标题（GTK 那侧的窗口标题由壳画，
+                不读这一行），lang 是给浏览器/辅助技术看的初始语言，两个都不是界面正文。
+   怎么回来：改了这里的 id 或 class，tests/structure.test.mjs 那两条（id 双向清单、body 里不许有中文）会红；
+             主题色板靠 html[data-theme] 这一个属性切换，值由 main.js 从设置里读。 -->
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub 加速助手</title>
+</head>
+<body>
+
+  <!-- 顶部中间的托盘胶囊：真托盘在系统托盘区，这颗是窗口内的入口（照 phpo 的 tray-sim）。
+       里面那一颗点、一行字，以及点开的六个主题圆点与两条动作，全由 views/tray-pill 现场造。 -->
+  <div class="tray-pill" id="trayPill"></div>
+  <div class="tray-menu" id="trayMenu"></div>
+
+  <div class="app">
+    <div class="topbar" id="topbar"></div>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="toolbar" id="toolbar"></div>
+
+    <div class="main">
+      <aside class="sidebar" id="sidebar">
+        <div class="tree-scroll" id="tree"></div>
+        <div class="sidebar-footer" id="sidebarFooter"></div>
+      </aside>
+
+      <div class="right">
+        <div class="detail" id="detail"></div>
+
+        <div class="queue" id="queuePanel"></div>
+      </div>
+    </div>
+
+    <div class="statusbar" id="statusbar"></div>
+  </div>
+
+  <!-- 设置中心：整个弹窗（标题行、七条导航、七个面板、底下两颗钮）由 views/settings/SettingsView.js 现场造，
+       面板清单从 views/settings/panes/ 扫出来。外框只留这一个壳，因为里面每一句都跟着语言走。 -->
+  <div class="settings-mask" id="settingsMask"></div>
+
+  <!-- 「选择主题」那六张卡的弹窗：卡片由 styles/themes/ 扫出来，整套结构由 views/theme-picker 现场造。 -->
+  <div class="theme-mask" id="themeMask"></div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

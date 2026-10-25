@@ -1,0 +1,21 @@
+{
+  "id": "coursera",
+  "name": "Coursera",
+  "order": 9,
+  "items": [
+    {
+      "id": "co-video",
+      "name": "视频 CDN",
+      "domains": [
+        "d3c33hcgiwev3.cloudfront.net"
+      ]
+    },
+    {
+      "id": "co-main",
+      "name": "主站资源",
+      "domains": [
+        "d1a3f4spazzrp4.cloudfront.net"
+      ]
+    }
+  ]
+}

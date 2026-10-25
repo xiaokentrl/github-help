@@ -1,0 +1,43 @@
+{
+  "id": "cdn",
+  "name": "公共 CDN",
+  "order": 7,
+  "items": [
+    {
+      "id": "cdn-jsdelivr",
+      "name": "jsDelivr",
+      "domains": [
+        "cdn.jsdelivr.net"
+      ]
+    },
+    {
+      "id": "cdn-unpkg",
+      "name": "unpkg",
+      "domains": [
+        "unpkg.com"
+      ]
+    },
+    {
+      "id": "cdn-cdnjs",
+      "name": "cdnjs",
+      "domains": [
+        "cdnjs.cloudflare.com"
+      ]
+    },
+    {
+      "id": "cdn-gfonts",
+      "name": "Google Fonts",
+      "domains": [
+        "fonts.googleapis.com",
+        "fonts.gstatic.com"
+      ]
+    },
+    {
+      "id": "cdn-bootstrap",
+      "name": "Bootstrap",
+      "domains": [
+        "stackpath.bootstrapcdn.com"
+      ]
+    }
+  ]
+}

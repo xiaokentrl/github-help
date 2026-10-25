@@ -1,0 +1,31 @@
+/* ErrorBox 的样式：逐字照原型 :227-229，四处写死的颜色换成变量。
+   会错在哪：原型红条的上边线是 #fbd5d5、字是 #991b1b，黄条是 #f0d8b0 / #92400e，
+             五套深色各补两条点名覆盖（:579-580 与 :592-593）才看得见——这四支本来就抽成语义令牌了
+             （--line-soft-d / --error-fg / --line-soft-w / --warn-fg），件里只引令牌。
+   怎么回来：件里出现裸色值 CI 红；深色各套不必再为错误块补规则（第 7 节那条铁律要消灭的就是这种覆盖）。 */
+
+.error-box{
+  margin:0;padding:10px var(--sp-4);
+  background:var(--red-soft);border-top:1px solid var(--line-soft-d);
+  font-size:var(--fs-sm);color:var(--error-fg);
+  display:flex;gap:var(--sp-2);align-items:flex-start;
+}
+.error-box .ico{flex:none;font-weight:700}
+.error-box.warn{
+  background:var(--amber-soft);border-top-color:var(--line-soft-w);color:var(--warn-fg);
+}
+
+/* 正文可以折行；错误码那一串走等宽字体，方便人复制（第 6 节第 2 条：数字、IP 一律等宽） */
+.eb-body{flex:1;min-width:0;word-break:break-word}
+.eb-detail{
+  flex:none;font-family:var(--mono);font-size:var(--fs-xs);
+  color:var(--text-3);max-width:40%;overflow-wrap:anywhere;
+}
+
+/* 重试那颗：形状用件里那颗小按钮（.btn.btn-sm），配色走原型"重试"那一档（:331，--line-retry）。
+   原型这两套（错误块与队列行的重试）各写各的，收成一档类名后，"重试"在两处长得一样。 */
+.error-box .eb-retry{
+  flex:none;align-self:center;
+  color:var(--primary);border-color:var(--line-retry);background:transparent;
+}
+.error-box .eb-retry:hover:not(:disabled){background:var(--primary-soft)}

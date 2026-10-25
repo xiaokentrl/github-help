@@ -1,0 +1,129 @@
+/* 令牌层：干什么用——把界面上所有"值"（颜色、间距、字号、圆角、时长、层级）集中在这一处，
+   零件只准引这里的变量，不准自己写颜色。
+   会错在哪：零件里写死一个颜色，换主题时它不会跟着变，就得再加一条点名覆盖——
+   原型里那 33 条覆盖规则就是这么一条条攒出来的，越攒越没人敢删。
+   怎么回来：本文件与 themes/ 之外出现任何硬写颜色，CI 当场红（门禁见 组件库规划.md 8.5）。
+
+   下面这 21 支颜色变量逐字来自原型 :8-17（晨光白 = 本文件的默认值，一个数都没改）。 */
+:root {
+  --bg:#f5f6f8; --panel:#fff; --border:#e3e6eb; --border-strong:#d0d5dd;
+  --text:#1f2430; --text-2:#5b6474; --text-3:#8a93a3;
+  --primary:#2563eb; --primary-soft:#eaf0fe;
+  --green:#16a34a; --green-soft:#e8f7ee;
+  --amber:#d97706; --amber-soft:#fdf3e3;
+  --red:#dc2626; --red-soft:#fdecec;
+  --gold:#f59e0b; --gold-soft:#fef3c7; --gold-soft-2:#fffbeb; --gold-text:#92400e;
+  --radius:8px;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06);
+
+  /* 这 10 支逐字来自原型 :465-466（浅色先垫着，五套深色各自覆盖）。 */
+  --ctl:#fff; --hov:#f5f6f8; --hov2:#eef1f5; --band:#f0f2f5;
+  --line-a:#c9d9f4; --line-w:#eddcb8; --line-d:#f2c6c6;
+  --mask:rgba(15,23,42,.4); --toast:#2b3441; --pop:0 12px 32px rgba(16,24,40,.14);
+
+  /* 压强调色时用什么字色（你拍的「对比度乙」）。晨光白压深蓝实测 5.17，白字最好读，
+     所以这两支在晨光白就是白字——这就是文档里说的「晨光白不参与那笔账」的写法。 */
+  --on-primary:#fff; --on-green:#fff;
+
+  /* 焦点环两支：实线一支 + 外晕一支。抽出来是因为「2px 实线 + 3px 外晕」是两种颜色，
+     只留一支变量的话另一支就得写死值，那是本文件要禁的事。每套主题都必须各给一支（契约变量）。 */
+  --focus-ring:#2563eb; --focus-glow:#eaf0fe;
+
+  /* 下面这些是「同一块底色，浅色一个值、深色另一个值」的那些地方。
+     原型靠 33 条点名覆盖做到这点，新前端改成浅色值写在这里、深色值写在每套主题块里，
+     于是组件层只写 var(--chip-bg) 就够了，不用再点名任何 class。
+     左边注释写的是原型里那个硬写的浅色值，逐字没动。 */
+  --chip-bg:#f0f2f5;              /* 原型 .perm / .count / .chip / .q-scroll:hover / .settings-head .close-btn:hover / .ver-h-item 的虚线 */
+  --mute-bg:#eef1f6;              /* 原型 .badge.unset / .score-bar / .dl-bar / .detail-empty .big */
+  --head-bg:#fafbfc;              /* 原型两张表的 th 与 .settings-nav */
+  --foot-bg:#fbfcfd;              /* 原型 .sidebar-footer / .statusbar / .settings-foot / .set-card.disabled */
+  --track-bg:#e8ecf2;             /* 原型 .global-progress.show 的底 */
+  /* 下面三支是 F5 建外框那轮现量的：原型这三处浅色各写死一个值，五套深色又各有一条点名覆盖
+     （:572 换成 --green-soft、:586-587 换成 --band）。不抽成语义名，外框就得把那五条覆盖抄进
+     frontend/，正是第 7 节要禁的事。 */
+  --row-current-hov:#dcf3e6;      /* 原型 table.cands tr.current:hover td（:246），当前 IP 那一行再压一遍的绿 */
+  --cand-line:#f0f2f5;            /* 原型 table.cands td 的下边线（:233） */
+  --q-line:#f4f5f7;               /* 原型 table.qtable td 的下边线（:285）——比上面那支浅一档，原型就是这两个数，没给合并 */
+  --line-soft-a:#d6e2fb;          /* 原型 .banner / .q-current 的边 */
+  --line-retry:#c9d8fb;           /* 原型 .q-act.retry 的边 */
+  --line-soft-w:#f0d8b0;          /* 原型 .btn.btn-sm.restore / .q-act.restore 的边 */
+  --line-detect:#fcd34d;          /* 原型 .q-current.detecting 的边 */
+  --line-soft-d:#fbd5d5;          /* 原型 .error-box 的上边线 */
+  --rail:#cbd5e1;                 /* 原型 .dot.unset 与 .switch .slider 的底色 */
+  --cb-line:#c3c9d4;              /* 原型 .cb 的边框 */
+  --set-line:#d6dbe3;             /* 原型 .set-card:hover 的边框 */
+  --info-fg:#1e40af;              /* 原型 .banner 的字 */
+  --error-fg:#991b1b;             /* 原型 .error-box 的字 */
+  --warn-fg:#92400e;              /* 原型 .error-box.warn 的字 */
+  --hl-bg:#fff3a3;                /* 原型搜索命中的高亮底 */
+  --hl-fg:var(--text);            /* 浅色那块没写字色（跟着正文走），深色写的是背景色 */
+  --toast-fg:#fff;                /* 原型 #toast 的白字 */
+  --toast-line:transparent;       /* 浅色气泡本来没有边框 */
+  --toast-edge:0px;
+  --sb-thumb:#d4d9e1;             /* 原型 ::-webkit-scrollbar-thumb */
+  --sb-thumb-hov:#bcc3ce;
+  --skel-a:#eef1f6; --skel-b:#e1e6ee;   /* 原型骨架屏那两道渐变 */
+  --pop-lg:0 20px 60px rgba(16,24,40,.25);   /* 原型 .settings-panel 的影子 */
+  --mask-settings:rgba(15,23,42,.45);         /* 原型 .settings-mask 的遮罩 */
+
+  /* 尺寸刻度（组件库规划.md 第 6 节）。原型里没有对应变量的那些，注释标了它的出处行号。 */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px;
+  --ctl-sm:24px; --ctl-md:30px; --ctl-lg:32px;   /* 新件用这三档；旧件照原型原值，见第 10 节第 3 条 */
+  --ctl-seg:28px;                                /* 原型 .seg button 的高（:383），分段选择里的段比按钮矮一档 */
+  --ctl-act:22px;                                /* 原型 .q-act 的高（:325），队列行内的小按钮 */
+  --hit-min:24px;                                 /* 热区下限：视觉可以更小，可点的范围必须补到这里 */
+  --icon-sm:14px; --icon-md:16px; --icon-lg:18px;  /* 图标只用这三档（4.2 那条：定 14/16/18，别的一律不许） */
+  --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-lg:14px; --fs-xl:15px; --fs-2xl:16px;
+  --fs-3xl:18px; --fs-4xl:20px; --fs-5xl:22px;                 /* 原型 .close-btn 18 / .logo 与 .ver-h 20 / .detail-empty .big 22 */
+  --fs-xs-2:11.5px; --fs-sm-2:12.5px;                          /* 原型一直在用的两个半档（11.5/12.5），收成变量免得件里写裸值 */
+  /* 已定「不动」的那两处旧字号（第 10 节第 3 条）：只许 tag/tag.css 引，新件一律不许——tests 里钉着这条。 */
+  --fs-legacy-tag:10px;   /* 原型 .tag 与 .q-kind（:249、:297） */
+  --fs-legacy-caret:9px;  /* 原型 .caret（:142），树里那个折叠三角 */
+  /* --radius:8px 那一支在上面「逐字来自原型 :8-17」那段里已经给过，这里不重复（同一支给两遍就是两份真源）。 */
+  --radius-mini:2px; --radius-xs:3px; --radius-ctl:4px; --radius-sm:6px; --radius-bubble:7px;
+  --radius-sel:5px;   /* 只原型 .sel 一处用的这一档（:394），单独列出来免得件里写裸值；新件不许跟着抄 */
+  --radius-badge:10px; --radius-card:10px; --radius-lg:12px; --radius-xl:14px; --radius-pill:20px;
+  --sb-w:10px;                                    /* 自绘滚动条宽，两平台同一观感（第 6 节第 1 条） */
+
+  /* 下面这几支原型从不按主题覆盖——五套深色用的还是这几个值，所以只在基础层给一次，
+     各主题块里不许重复它们（重复就等于给同一件事两处写法）。 */
+  --mark:#fff;                /* 勾、一横、把手中间那道线的反白（原型 .cb::after :136、.resizer:hover::before :196） */
+  --knob:#fff;                /* 开关上那颗圆点（原型 :390） */
+  --pulse-ring:rgba(37,99,235,.35);   /* 呼吸动画那一圈（原型 @keyframes pulse :164） */
+  --shadow-toast:0 6px 20px rgba(0,0,0,.18);   /* 原型 #toast :431 */
+  --shadow-knob:0 1px 2px rgba(0,0,0,.2);      /* 原型 .switch .slider::before :390 */
+  --grad-logo:linear-gradient(135deg,#2563eb,#0ea5a4);   /* 原型 .logo :25、.about-logo-lg :423 */
+
+  /* 这五支是 F5 建外框那轮补的：原型里写死过、但五套深色从没覆盖过，所以同样只在基础层给一次。
+     会错在哪：不抽出来的话，外框那份 css 就得直接写 rgba(245,158,11,.6)，门禁第 1 条当场红；
+     抽出来之后，将来真要按主题换这圈光，只改这里一行。 */
+  --glow-detect:rgba(245,158,11,.6);   /* 原型 .node.item.detecting::after :120，检测中那行左边金条的光 */
+  --glow-apply:rgba(37,99,235,.6);     /* 原型 .node.item.applying::after :124，应用中那行左边蓝条的光 */
+  --banner-btn-hov:rgba(37,99,235,.1); /* 原型 .banner button:hover :49，横幅上「知道了」那颗钮的悬停底 */
+  --swatch-line:rgba(0,0,0,.12);       /* 原型 .theme-swatch :635，配色卡预览块那圈描边 */
+  --shadow-logo-lg:0 6px 16px rgba(37,99,235,.25);  /* 原型 .about-logo-lg :423，关于页大 logo 的影子 */
+
+  /* 这两支不是"某套主题的色"，是两张预览卡给自己预留的两个槽：值由界面那侧从 themes/<id>/theme.js 的
+     colors[] 现场写到元素身上（原型 :3297 那段内联就是这个意思），六套主题都不许覆盖它们。
+     为什么要在这里给一个默认值：门禁第 4 条"引了未定义的 var 就红"要有东西可对，
+     而且哪天忘了写，那颗圆点会退回继承色——看着"差不多对"，正是最难查的那种错。 */
+  --dot-accent:var(--primary); --dot-bg:var(--panel);
+
+  /* 气泡的底色：浅色这里是 #1f2430（原型 #toast :431），与上面 --toast 那支 #2b3441（托盘胶囊与深色气泡用）
+     本来就不是一个值。原型这两处不同，这里就不合并——合并等于顺手改了浅色的外观。深色各套覆盖成 var(--toast)。 */
+  --toast-bg:#1f2430;
+
+  /* 时长三档（第 6 节）。原型 .12s/.18s/.3s 各处出现的过渡时长收到这里，第四个值不许再写。 */
+  --dur-fast:.12s; --dur-base:.18s; --dur-slow:.3s;
+
+  /* 层级：只用原型已有的这几个数（实测全文 z-index 就 8 处），新件只能从这七个里挑。 */
+  --z-row:1; --z-progress:30; --z-pill:55; --z-pill-menu:56;
+  --z-dialog:60; --z-settings:70; --z-theme:80; --z-toast:99;
+
+  /* 这两条渐变原型从没按主题覆盖过，所以只在基础层给一次。 */
+  --grad-progress:linear-gradient(90deg,#2563eb,#0ea5a4);
+  --grad-score:linear-gradient(90deg,#34d399,#16a34a);
+  --primary-strong:#1d55d0;   /* 原型 .btn.primary:hover，五套深色同样没覆盖过 */
+
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}

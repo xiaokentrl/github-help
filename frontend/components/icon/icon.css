@@ -1,0 +1,9 @@
+/* Icon 的样式：尺寸三档 + 描边跟随字色。
+   干什么用：图标自己不决定颜色，跟所在那一行的字色走（currentColor），所以六套主题都不用为它写一条规则。
+   会错在哪：给它写死一个灰，切到深色就成了看不见的一块；尺寸写第四档，同一行的基线会歪。
+   怎么回来：这里出现裸色值即 CI 红；尺寸只允许 --icon-sm/md/lg 这三支。 */
+.ico{display:inline-block;vertical-align:-2px;flex:none;
+  stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ico-sm{width:var(--icon-sm);height:var(--icon-sm)}
+.ico-md{width:var(--icon-md);height:var(--icon-md)}
+.ico-lg{width:var(--icon-lg);height:var(--icon-lg)}

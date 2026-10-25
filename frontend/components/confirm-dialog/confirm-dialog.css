@@ -1,0 +1,30 @@
+/* ConfirmDialog 的样式：遮罩与那只框逐字照原型 :338-348，三处写死的值换成变量。
+   会错在哪：原型这里 .modal 底是 #fff、影子写死一串 rgba、遮罩 rgba(15,23,42,.4)，
+             五套深色各补两条点名覆盖（:596 与 :598、:539 那一组）才看得清；
+             新前端把这三处指到 --ctl / --pop / --mask——晨光白那三套值本来就和原型逐字相同，
+             深色五套各自给过，于是六套的外观跟原型一模一样，而覆盖规则整块消失。
+   怎么回来：件里出现裸色值 CI 红（8.5 第 1 条）；层级只许用 --z-dialog（第 6 节那条：新件只能从七个既有数里挑）。 */
+
+.modal-mask{
+  position:fixed;inset:0;background:var(--mask);
+  display:none;align-items:center;justify-content:center;
+  z-index:var(--z-dialog);animation:fadeIn var(--dur-base) ease;
+}
+.modal-mask.show{display:flex}
+
+.modal{
+  background:var(--ctl);border-radius:var(--radius-lg);box-shadow:var(--pop);
+  width:420px;max-width:calc(100vw - 40px);overflow:hidden;
+  animation:popIn var(--dur-base) ease;
+}
+.modal-head{padding:18px 20px 0}
+.modal-head h3{margin:0 0 6px;font-size:var(--fs-xl);font-weight:600}
+.modal-body{padding:6px 20px 4px;color:var(--text-2);font-size:var(--fs-md);line-height:1.6;max-height:50vh;overflow-y:auto}
+.modal-body p{margin:0 0 6px}
+.modal-body .warn-line{color:var(--red);font-weight:500;margin-top:8px}
+.modal-foot{padding:16px 20px 18px;display:flex;justify-content:flex-end;gap:var(--sp-2)}
+.modal-foot .btn{height:var(--ctl-lg)}
+
+/* 危险动作那颗确认钮：原型是内联 style 写背景色（:2251），收成一档类名，深色下字色仍走 --on-primary。 */
+.modal-foot .btn.is-danger{background:var(--red);border-color:var(--red);color:var(--on-primary)}
+.modal-foot .btn.is-danger:hover:not(:disabled){background:var(--red-soft);color:var(--red)}

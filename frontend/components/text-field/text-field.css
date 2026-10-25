@@ -1,0 +1,42 @@
+/* TextField 的样式：形状逐字照原型 :67-70（.search 那四行，含放大镜的两道伪元素），只换颜色。
+   会错在哪：① 原型 :69 那条 :focus 写的是"边框变主色 + 3px 主色外光晕"，全站只有这一个框和下拉框有焦点样式，
+               留着就是"某些件 Tab 到了不亮"；② 清空那颗按钮是新加的，不给它够 24px 的热区，
+               鼠标偏一点就点空，等于把新添的这一下变成第二次麻烦。
+   怎么回来：:focus 不写在这里，由 styles/base.css 那条全站 :focus-visible 接管；
+             清空按钮视觉 12px、可点范围用 --hit-min 补到 24px，输入框右侧预留的那 26px 就是它的位置。 */
+
+.search{position:relative;flex:none;display:inline-flex;align-items:center}
+.search input{
+  width:210px;height:var(--ctl-md);padding:0 26px 0 30px;border-radius:var(--radius-sm);
+  border:1px solid var(--border-strong);background:var(--ctl);color:var(--text);
+  font-size:var(--fs-md);
+  transition:border-color var(--dur-fast),box-shadow var(--dur-fast);
+}
+.search input::placeholder{color:var(--text-3);opacity:1}
+/* 禁用档：跟 .sel:disabled 同一档写法（select.css :12），不灰不挡住就等于"看着没禁其实打不进字" */
+.search input:disabled{opacity:.45;cursor:not-allowed}
+
+/* 放大镜：原型靠 .search 的两道伪元素画的（圆环 + 斜柄），一根线条也没写成字，颜色走变量。 */
+.search::before{
+  content:"";position:absolute;left:10px;top:50%;width:11px;height:11px;
+  transform:translateY(-60%);border:1.6px solid var(--text-3);border-radius:50%;pointer-events:none;
+}
+.search::after{
+  content:"";position:absolute;left:19px;top:19px;width:5px;height:1.6px;
+  background:var(--text-3);transform:rotate(45deg);pointer-events:none;
+}
+
+/* 清空：只在有内容时出现（由 .has-value 控制），两条短线交叉成 ×。 */
+.search-clear{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:var(--hit-min);height:var(--hit-min);padding:0;border:none;background:transparent;
+  cursor:pointer;display:none;align-items:center;justify-content:center;border-radius:var(--radius-sm);
+}
+.search.has-value .search-clear{display:inline-flex}
+.search-clear::before,.search-clear::after{
+  content:"";position:absolute;width:10px;height:1.6px;border-radius:var(--radius-mini);
+  background:var(--text-3);transition:background var(--dur-fast);
+}
+.search-clear::before{transform:rotate(45deg)}
+.search-clear::after{transform:rotate(-45deg)}
+.search-clear:hover::before,.search-clear:hover::after{background:var(--text)}

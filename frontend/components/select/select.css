@@ -1,0 +1,20 @@
+/* Select 的样式：两档形状逐字照原型（:394 的 .sel 与 :91 的 select.mode），只把 #fff 换成变量。
+   会错在哪：原型这两条各带一条 :focus（:395），写的是"边框变色 + 3px 主色外光晕"——
+             留在件里就等于全站只有下拉框有焦点环，Tab 到别的件上什么也不亮（第 7 节第 3 条那条病）。
+   怎么回来：这里的 :focus 一律不写，焦点环由 styles/base.css 那条全站 :focus-visible 接管；
+             件里出现裸色值 CI 红（8.5 第 1 条），引了主题没给的变量也红（第 4 条）。 */
+
+.sel{
+  padding:5px 8px;border-radius:var(--radius-sel);
+  border:1px solid var(--border-strong);background:var(--ctl);color:var(--text);
+  font-size:var(--fs-sm-2);cursor:pointer;min-width:140px;
+}
+.sel:disabled{opacity:.45;cursor:not-allowed}
+
+/* 工具栏那一档（原型 select.mode :91）：高 30、圆角 6，比设置面板那档矮胖一点。 */
+select.mode{
+  height:var(--ctl-md);border-radius:var(--radius-sm);padding:0 8px;
+  border:1px solid var(--border-strong);background:var(--ctl);color:var(--text);
+  cursor:pointer;
+}
+select.mode:disabled{opacity:.45;cursor:not-allowed}

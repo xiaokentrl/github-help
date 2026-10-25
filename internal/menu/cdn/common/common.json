@@ -1,0 +1,10 @@
+{
+  "parentDomains": [
+    "bootstrapcdn.com",
+    "cloudflare.com",
+    "googleapis.com",
+    "gstatic.com",
+    "jsdelivr.net",
+    "unpkg.com"
+  ]
+}

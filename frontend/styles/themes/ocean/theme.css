@@ -1,0 +1,59 @@
+/* 深海蓝（styles/themes/ocean/）：干什么用——只换一批变量的值，界面所有件跟着换色，规则一行不用改。
+   会错在哪：把颜色写进组件层，就等于"给这套主题再加一条点名覆盖"；六套这么攒下去，
+   就是原型里那 33 条没人敢删的覆盖规则（第 7 节那条铁律说的就是这件事）。
+   怎么回来：这一套缺契约变量、或组件引了这里没给的变量，CI 当场红（门禁见 组件库规划.md 8.5 第 4 条）。
+   下面这些值逐字来自原型 :495 与 :521 两段——每套有两段，合起来才算这套的全量。 */
+html[data-theme="ocean"]{
+  color-scheme:dark;
+  --bg:#080e1a; --panel:#0d1625; --border:#1e3252;
+  --border-strong:#35547e; --text:#e0e8f5; --text-2:#8ba3c7;
+  --text-3:#5a7194; --primary:#38bdf8; --primary-soft:rgba(56,189,248,.14);
+  --green:#2dd4bf; --green-soft:rgba(45,212,191,.14); --amber:#fbbf24;
+  --amber-soft:rgba(251,191,36,.14); --red:#fb7185; --red-soft:rgba(251,113,133,.14);
+  --gold:#fbbf24; --gold-soft:#2a2517; --gold-soft-2:#232013;
+  --gold-text:#f0d494; --shadow:0 1px 2px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.5);
+  /* 控件底色、悬停/按压底、软线色、遮罩、气泡、浮层影子（和上面那段同属这套主题） */
+  --ctl:#122035; --hov:#182a44; --hov2:#1e3453;
+  --band:#152539; --line-a:rgba(56,189,248,.34); --line-w:rgba(251,191,36,.32);
+  --line-d:rgba(251,113,133,.34); --mask:rgba(0,6,18,.66); --toast:#182a44;
+  --pop:0 12px 32px rgba(0,0,0,.6);
+  /* 语义令牌：这些位置在晨光白是硬写的一个值，在这套里指到上面那批变量。
+     左边注释是原型里那条点名覆盖，此处不再需要它。 */
+  --chip-bg:var(--hov2);  /* 原型 .perm / .count / .chip / .q-scroll:hover */
+  --mute-bg:var(--band);  /* 原型 .badge.unset / .score-bar / .dl-bar / .detail-empty .big */
+  --head-bg:var(--ctl);  /* 原型两张表的 th 与 .settings-nav */
+  --foot-bg:var(--band);  /* 原型 .sidebar-footer / .statusbar / .settings-foot */
+  --track-bg:var(--toast);  /* 原型 .global-progress.show 的底 */
+  /* 下面三支是 F5 外框那轮随 tokens.css 一起补的语义令牌：浅色那三个值写死在原型里，五套深色各有一条点名覆盖（:572 / :586-587），这里把它们换成这套自己的指针。 */
+  --row-current-hov:var(--green-soft);  /* 原型 table.cands tr.current:hover td :246 那条覆盖 :572 */
+  --cand-line:var(--band);  /* 原型 table.cands td 的下边线 :233，那条覆盖 :586 */
+  --q-line:var(--band);     /* 原型 table.qtable td 的下边线 :285，那条覆盖 :587 */
+  --line-soft-a:var(--line-a);  /* 原型 .banner / .q-current 的边 */
+  --line-retry:var(--line-a);  /* 原型 .q-act.retry 的边 */
+  --line-soft-w:var(--line-w);  /* 原型 .btn.btn-sm.restore / .q-act.restore 的边 */
+  --line-detect:var(--line-w);  /* 原型 .q-current.detecting 的边 */
+  --line-soft-d:var(--line-d);  /* 原型 .error-box 的上边线 */
+  --rail:var(--border-strong);  /* 原型 .dot.unset 与 .switch .slider 的底色 */
+  --cb-line:var(--border-strong);  /* 原型 .cb 的边框 */
+  --set-line:var(--border-strong);  /* 原型 .set-card:hover 的边框 */
+  --info-fg:var(--primary);  /* 原型 .banner 与 .banner button 的字 */
+  --error-fg:var(--red);  /* 原型 .error-box 的字 */
+  --warn-fg:var(--amber);  /* 原型 .error-box.warn 的字 */
+  --hl-bg:var(--gold);  /* 原型搜索命中的高亮底 */
+  --hl-fg:var(--bg);  /* 高亮上的字色：深色用的是这套的背景色 */
+  --toast-fg:var(--text);  /* 原型 #toast 的字 */
+  --toast-line:var(--border-strong);  /* 原型 #toast 的边（浅色本来没有边） */
+  --toast-edge:1px;  /* 浅色给 0px，深色给 1px，边的有无也走变量 */
+  --sb-thumb:var(--border-strong);  /* 原型 ::-webkit-scrollbar-thumb */
+  --sb-thumb-hov:var(--hov2);  /* 原型 ::-webkit-scrollbar-thumb:hover */
+  --skel-a:var(--band);  /* 骨架屏两道渐变的第一道 */
+  --skel-b:var(--hov2);  /* 骨架屏两道渐变的第二道 */
+  --pop-lg:var(--pop);  /* 原型 .settings-panel 的影子 */
+  --mask-settings:var(--mask);  /* 原型 .settings-mask 的遮罩 */
+  --toast-bg:var(--toast);  /* 原型 #toast 的底色：浅色是 #1f2430，这套走自己的 --toast */
+  /* 契约变量：每套主题必须各给的一套四支（缺一支 CI 红）。
+     --on-primary/--on-green 是你拍的「对比度乙」：压在这套的强调色上用什么字色。
+     --focus-ring/--focus-glow 是焦点环的实线与外晕，跟着这套的主色走。 */
+  --on-primary:#080e1a; --on-green:#080e1a;
+  --focus-ring:var(--primary); --focus-glow:var(--primary-soft);
+}

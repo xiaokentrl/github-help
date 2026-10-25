@@ -1,0 +1,28 @@
+{
+  "id": "block",
+  "name": "去广告与屏蔽",
+  "order": 10,
+  "items": [
+    {
+      "id": "bl-antiad",
+      "name": "anti-AD",
+      "domains": [
+        "anti-ad.net"
+      ]
+    },
+    {
+      "id": "bl-adrules",
+      "name": "AdRules",
+      "domains": [
+        "adrules.top"
+      ]
+    },
+    {
+      "id": "bl-steven",
+      "name": "StevenBlack",
+      "domains": [
+        "raw.githubusercontent.com/StevenBlack/hosts"
+      ]
+    }
+  ]
+}

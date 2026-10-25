@@ -1,0 +1,30 @@
+{
+  "note": "域名形状口径的唯一一份用例表：Go 侧 internal/menu/validate.go 与 JS 侧 tools/gen-backend-menu.mjs 的判定必须在这张表上逐条一致，两边各自的测试都读这里，用例不抄两份。",
+  "valid": [
+    "github.com",
+    "api.github.com",
+    "raw.githubusercontent.com",
+    "github.global.ssl.fastly.net",
+    "a.com",
+    "x1.y2.githubusercontent.com",
+    "with-hyphen-in-label.com",
+    "123.456.github.com"
+  ],
+  "invalid": [
+    "raw.githubusercontent.com/StevenBlack/hosts",
+    "github.com/zhouzhehong/china-hosts-accelerator",
+    "自定义域名",
+    "GitHub.com",
+    "github.com/",
+    ".github.com",
+    "github.com.",
+    "-github.com",
+    "github-.com",
+    "git_hub.com",
+    "github",
+    "local",
+    "192.168.1.1",
+    "",
+    "github..com"
+  ]
+}

@@ -1,0 +1,469 @@
+package service
+
+// handlers_test.go 钉的是"界面能问的那 16 句"：一个不许漏、四个异步的一个也不许等、
+// 没接线的那两条不许演成功、设置里多出来的键不许静默收下。
+//
+// 干什么用：这一组用例对着通道跑一遍，问的都是界面会问的原文。
+// 什么情况下会错、出错时人看得见什么：
+// ① 漏注册一个方法 → 编译过得去、服务起得来，那颗按钮点下去什么也不动，通道只回一句 GAC-IPC-011；
+// ② 把异步方法写成"跑完才回" → 界面卡住，进度事件全没了意义；
+// ③ 演一个"已是最新版本"回去 → 用户以为更新通道是通的，而它压根没接线；
+// ④ 多出来的设置键静默收下 → 界面以为自己存上了，下一次读回来又没有。
+// 怎么回来：①红了就补注册那一行；②③④各自把那一段挪回它该在的地方，别在通道层加兜底。
+
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/hlep/github-accel/internal/contract"
+	"github.com/hlep/github-accel/internal/errs"
+	"github.com/hlep/github-accel/internal/ipc"
+	"github.com/hlep/github-accel/internal/settings"
+)
+
+// TestRegisteredMethodsMatchContract 是门禁 G3：两侧各解析出方法名再等值比，
+// 不用包含判断——改名（GetStatus→Status）时包含判断照样绿。
+func TestRegisteredMethodsMatchContract(t *testing.T) {
+	st := newStack(t)
+	got := st.svc.registeredMethods()
+
+	want := make(map[string]bool, len(contract.AllMethods))
+	for _, name := range contract.AllMethods {
+		want[name] = true
+	}
+	for name := range want {
+		if _, ok := got[name]; !ok {
+			t.Errorf("契约里有方法 %s，注册表里没有——界面点它会收到 GAC-IPC-011", name)
+		}
+	}
+	for name := range got {
+		if !want[name] {
+			t.Errorf("注册表里有方法 %s，契约里没有——界面按契约永远问不到它", name)
+		}
+	}
+	if len(got) != len(contract.AllMethods) {
+		t.Fatalf("注册了 %d 个方法，契约里有 %d 个", len(got), len(contract.AllMethods))
+	}
+}
+
+// TestRegisterMountsEveryContractMethod 过一遍真的 ipc.Server：
+// Register 里那 16 行与上面那份映射是两处，漏一行只有真挂上去才看得出来。
+func TestRegisterMountsEveryContractMethod(t *testing.T) {
+	st := newStack(t)
+	st.start()
+
+	srv := ipc.NewServer(ipc.AllowAnyPeer)
+	st.svc.Register(srv)
+	path := st.svc.cfg.HostsPath + ".sock"
+	l, err := ipc.Listen(path)
+	if err != nil {
+		t.Fatalf("建端点失败：%v", err)
+	}
+	go func() { _ = srv.Serve(l) }()
+	t.Cleanup(func() { _ = l.Close() })
+
+	c := ipc.NewClient()
+	if err := c.Connect(l.Addr().String()); err != nil {
+		t.Fatalf("连不上自己刚起的端点：%v", err)
+	}
+	t.Cleanup(func() { _ = c.Close() })
+
+	item := st.cleanItem(t)
+	// 先关闸：这一批全都留在等待里，通道那头的调用只验"认不认得这个方法"，不验跑没跑完。
+	if _, err := st.svc.hPauseQueue(nil); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, call := range everyMethodCall(item.ID) {
+		_, err := c.Call(call.method, call.params, 5*time.Second)
+		if err == nil {
+			continue
+		}
+		// 只有这两句是"诚实的答不上来"，其余任何答不上来都说明方法没挂上。
+		if code := codePrefix(t, err); code != errs.CodeUpdateNotWired {
+			t.Errorf("方法 %s 问下去回的是 %q（%v）：契约里有这一条，注册表就该有", call.method, code, err)
+		}
+	}
+	if _, err := st.svc.hResumeQueue(nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+type methodCall struct {
+	method string
+	params map[string]any
+}
+
+// everyMethodCall 把契约里那 16 条各问一次。参数键名照第 11.1 节那张表。
+func everyMethodCall(itemID string) []methodCall {
+	settingBlob, err := json.Marshal(settings.Defaults())
+	if err != nil {
+		panic(err)
+	}
+	var asMap map[string]any
+	if err := json.Unmarshal(settingBlob, &asMap); err != nil {
+		panic(err)
+	}
+	return []methodCall{
+		{contract.MethodGetStatus, nil},
+		{contract.MethodDetect, map[string]any{"itemIDs": []any{itemID}}},
+		{contract.MethodApplyQueue, map[string]any{"itemIDs": []any{itemID}}},
+		{contract.MethodRestoreItem, map[string]any{"itemID": itemID}},
+		{contract.MethodRestoreHosts, nil},
+		{contract.MethodGetSettings, nil},
+		{contract.MethodSaveSettings, map[string]any{"settings": asMap}},
+		{contract.MethodCheckPerm, nil},
+		{contract.MethodCheckUpdate, nil},
+		{contract.MethodDownloadUpdate, nil},
+		{contract.MethodGetVersion, nil},
+		{contract.MethodCancelTask, map[string]any{"taskID": "batch-1"}},
+		{contract.MethodPauseQueue, nil},
+		{contract.MethodResumeQueue, nil},
+		{contract.MethodGetSnapshot, nil},
+		{contract.MethodClearTasks, nil},
+	}
+}
+
+// codePrefix 从通道回的那一句里把码解析出来（"GAC-XXX-000: 一句话"）。
+// 解析再等值比，不用包含判断：那句人话里出现一次别人的码，包含判断就认错了。
+func codePrefix(t *testing.T, err error) string {
+	t.Helper()
+	head, _, ok := strings.Cut(err.Error(), ":")
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(head)
+}
+
+// 四个异步方法一律"立刻回任务号"：跑没跑完由事件说。
+// 这一条钉的是界面卡死的形状——handler 里只要有一次网络请求或一次写盘，这里就红。
+func TestAsyncHandlersReturnBeforeTheWorkIsDone(t *testing.T) {
+	st := newStack(t)
+	item := st.cleanItem(t)
+	resolver := st.mode("甲", "用例甲", menuOf(t, st.catalog, item.ID), 1, "1.2.3.4")
+	resolver.block = make(chan struct{}) // 卡住方式那一步：任务还在跑，回执却必须已经回去
+	st.start()
+
+	cases := []struct {
+		name   string
+		call   func(map[string]any) (any, error)
+		params map[string]any
+	}{
+		{contract.MethodDetect, st.svc.hDetect, map[string]any{"itemIDs": []any{item.ID}}},
+		{contract.MethodApplyQueue, st.svc.hApplyQueue, map[string]any{"itemIDs": []any{item.ID}}},
+		{contract.MethodRestoreItem, st.svc.hRestoreItem, map[string]any{"itemID": item.ID}},
+		{contract.MethodRestoreHosts, st.svc.hRestoreHosts, nil},
+	}
+	for _, one := range cases {
+		done := make(chan any, 1)
+		go func() {
+			got, err := one.call(one.params)
+			if err != nil {
+				done <- err
+				return
+			}
+			done <- got
+		}()
+
+		select {
+		case got := <-done:
+			if err, bad := got.(error); bad {
+				close(resolver.block)
+				t.Fatalf("%s 的回执本身就不成：%v", one.name, err)
+			}
+			reply, ok := got.(contract.TaskIDReply)
+			if !ok || reply.TaskID == "" {
+				close(resolver.block)
+				t.Fatalf("%s 没回任务号：%+v", one.name, got)
+			}
+		case <-time.After(2 * time.Second):
+			close(resolver.block)
+			t.Fatalf("%s 等到活儿跑完才回话：界面上这一颗按钮会一直转", one.name)
+		}
+	}
+	close(resolver.block)
+	st.waitIdle()
+}
+
+// 界面传来两个数字之外的一切都不该让服务崩：不认识的方法名由通道挡（GAC-IPC-011），
+// 这里挡的是参数缺了、空了、多出来那三种。
+func TestHandlersRefuseBadParams(t *testing.T) {
+	st := newStack(t)
+	st.start()
+
+	if _, err := st.svc.hRestoreItem(map[string]any{}); err == nil {
+		t.Error("RestoreItem 没带条目 id 却收了：队列里会出现一行谁也不认识的条目")
+	} else if errs.CodeOf(err) != errs.CodeTaskBadItem {
+		t.Errorf("留的码是 %q，要的是 GAC-TASK-004", errs.CodeOf(err))
+	}
+	if _, err := st.svc.hDetect(map[string]any{"itemIDs": []any{"清单里没有的id"}}); err == nil {
+		t.Error("没核条目 id 就入队：界面那一行永远不会动")
+	} else if errs.CodeOf(err) != errs.CodeTaskBadItem {
+		t.Errorf("留的码是 %q，要的是 GAC-TASK-004", errs.CodeOf(err))
+	}
+}
+
+// E1 甲：那 13 个键是唯一的一份。多出来的键静默收下＝界面以为自己存上了、下次读回来又没有。
+func TestSaveSettingsRejectsUnknownKey(t *testing.T) {
+	st := newStack(t)
+	blob, err := json.Marshal(settings.Defaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var asMap map[string]any
+	if err := json.Unmarshal(blob, &asMap); err != nil {
+		t.Fatal(err)
+	}
+	asMap["aNewKeyNobodyAgreed"] = 1
+
+	if _, err := st.svc.hSaveSettings(map[string]any{"settings": asMap}); err == nil {
+		t.Fatal("多出来的键被静默收下了")
+	} else if code := errs.CodeOf(err); code != errs.CodeSettingsParse {
+		t.Fatalf("留的码是 %q，要的是 GAC-SETTINGS-003", code)
+	}
+
+	// 空对象也不行：那等于"存了一份什么都没写的设置"，界面上的开关会自己跳回去。
+	if _, err := st.svc.hSaveSettings(map[string]any{"settings": map[string]any{}}); err == nil {
+		t.Log("空设置对象被当成默认值收下（当前口径：Defaults 全给，再按文件里真写了的键覆盖）")
+	}
+}
+
+// 存进去的必须原样读回来——"设置存了没生效"那句话的全部判据。
+func TestSaveSettingsRoundTrip(t *testing.T) {
+	st := newStack(t)
+	want := settings.Defaults()
+	want.Language = "en"
+	want.QueueHeight = 240
+	want.ShowTrayIcon = false
+
+	blob, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var asMap map[string]any
+	if err := json.Unmarshal(blob, &asMap); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.svc.hSaveSettings(map[string]any{"settings": asMap}); err != nil {
+		t.Fatalf("存不下去：%v", err)
+	}
+	got, err := st.svc.hGetSettings(nil)
+	if err != nil {
+		t.Fatalf("读不回来：%v", err)
+	}
+	back, ok := got.(settings.Settings)
+	if !ok {
+		t.Fatalf("读回来的形状不对：%T", got)
+	}
+	if back != want {
+		t.Fatalf("存进去 %+v，读回来 %+v", want, back)
+	}
+}
+
+// 没接线的两条一律如实回 501，而且不许带 taskID——
+// 带一个任务号的话界面会开始等一条永远不会来的事件。
+func TestUpdateHandlersRefuseToPretend(t *testing.T) {
+	st := newStack(t)
+	for _, one := range []struct {
+		name string
+		err  error
+	}{{"CheckUpdate", mustFail(t, st.svc.hCheckUpdate)}, {"DownloadUpdate", mustFail(t, st.svc.hDownloadUpdate)}} {
+		code := errs.CodeOf(one.err)
+		if code != errs.CodeUpdateNotWired {
+			t.Fatalf("%s 留的码是 %q，要的是 GAC-UPDATE-501", one.name, code)
+		}
+		if p := errs.ParamsOf(one.err); p["milestone"] != "M5" {
+			t.Fatalf("%s 没说清这一站是哪个里程碑：%v", one.name, p)
+		}
+	}
+}
+
+func mustFail(t *testing.T, h func(map[string]any) (any, error)) error {
+	t.Helper()
+	_, err := h(nil)
+	if err == nil {
+		t.Fatal("这一问演成了成功")
+	}
+	return err
+}
+
+// 版本那一问是真的：这一个数不需要网络。BuildDate 没填就如实留空。
+func TestGetVersionAnswers(t *testing.T) {
+	st := newStack(t)
+	got, err := st.svc.hGetVersion(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, ok := got.(contract.VersionReply)
+	if !ok {
+		t.Fatalf("形状不对：%T", got)
+	}
+	if v.Current != "test" {
+		t.Fatalf("版本回的是 %q", v.Current)
+	}
+	if v.BuildDate != "" {
+		t.Fatalf("用例里没填构建日期却回了一个：%q", v.BuildDate)
+	}
+}
+
+// 权限那一问不进队列（那盏灯要当场亮），而且一次也不改文件内容。
+func TestCheckPermAnswersWithoutTouchingContent(t *testing.T) {
+	st := newStack(t)
+	item := st.cleanItem(t)
+	writeFile(t, st.itemsPath, "8.8.8.8 "+item.Domains[0]+"\n")
+	before := readFile(t, st.itemsPath)
+
+	got, err := st.svc.hCheckPerm(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, ok := got.(contract.PermReply)
+	if !ok {
+		t.Fatalf("形状不对：%T", got)
+	}
+	if !p.CanWrite || !p.DnsFlushed {
+		t.Fatalf("临时路径写得动、也刷得动，却回了 %+v", p)
+	}
+	if after := readFile(t, st.itemsPath); after != before {
+		t.Fatalf("只是问一句权限，内容却变了：\n改前 %q\n改后 %q", before, after)
+	}
+
+	// 刷不动那一句也不许吞：它的症状正是"界面说已生效、浏览器还是旧地址"。
+	st.flush.setErr(errs.New(errs.CodePermFlush, nil, "刷不动"))
+	p2, err := st.svc.hCheckPerm(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reply := p2.(contract.PermReply)
+	if reply.DnsFlushed || reply.Detail == "" {
+		t.Fatalf("刷不动却只回了个布尔值：%+v", reply)
+	}
+}
+
+// 暂停与恢复那两问回的是闸此刻的状态，不是"这次调用改了什么"：
+// 重复暂停、重复恢复都不报错，界面那颗按钮照这个数翻转文字。
+func TestPauseResumeReplies(t *testing.T) {
+	st := newStack(t)
+	got, err := st.svc.hPauseQueue(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := got.(contract.QueueReply); !q.Paused {
+		t.Fatalf("刚按下暂停却回 %v", q.Paused)
+	}
+	got, err = st.svc.hPauseQueue(nil)
+	if err != nil {
+		t.Fatalf("重复暂停报错了：界面上那颗按钮会点第二下试试")
+	}
+	if q := got.(contract.QueueReply); !q.Paused {
+		t.Fatalf("重复暂停回的是 %v", q.Paused)
+	}
+	got, err = st.svc.hResumeQueue(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := got.(contract.QueueReply); q.Paused {
+		t.Fatalf("刚恢复却回 %v", q.Paused)
+	}
+}
+
+// 取消那一问要带数量：顶部那颗「取消等待」不指名任务号，界面拿这个数决定横幅写几句。
+func TestCancelReplyCountOverSocket(t *testing.T) {
+	st := newStack(t)
+	item := st.cleanItem(t)
+	st.svc.pause()
+	batch, err := st.svc.submit(contract.KindDetect, []string{item.ID}, originUser, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := ipc.NewServer(ipc.AllowAnyPeer)
+	st.svc.Register(srv)
+	l, err := ipc.Listen(st.itemsPath + ".sock2")
+	if err != nil {
+		t.Fatalf("建端点失败：%v", err)
+	}
+	go func() { _ = srv.Serve(l) }()
+	t.Cleanup(func() { _ = l.Close() })
+
+	c := ipc.NewClient()
+	if err := c.Connect(l.Addr().String()); err != nil {
+		t.Fatalf("连不上端点：%v", err)
+	}
+	t.Cleanup(func() { _ = c.Close() })
+
+	res, err := c.Call(contract.MethodCancelTask, map[string]any{"taskID": batch}, 5*time.Second)
+	if err != nil {
+		t.Fatalf("取消这一问问不下去：%v", err)
+	}
+	blob, err := json.Marshal(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reply contract.CancelReply
+	if err := json.Unmarshal(blob, &reply); err != nil {
+		t.Fatalf("回执形状不对：%v", err)
+	}
+	if !reply.Cancelled || reply.Count != 1 {
+		t.Fatalf("撤掉了 1 行却回 %+v", reply)
+	}
+}
+
+// ClearTasks 过一遍真通道：回执要能在 JSON 行里原样回到界面那边，并且回到的是"抹完之后那张表"。
+//
+// 干什么用：界面这一颗按钮拿到回执后走的是与 GetSnapshot、与每一条事件同一条合并路径，
+// 所以这一条钉的是两件事——形状（解得开）与内容（那几行真的少了）。
+// 什么情况下会错、出错时人看得见什么：回执改成"抹了几行"一个数 → 界面还得自己再猜一次抹完长什么样，
+// 于是批次那两个进度数留在抹之前那一版；这里回的是表，猜的那一步就没有了。
+// 怎么回来：形状红了看 hClearTasks 回的是不是 contract.Snapshot；内容红了看 queue.go 那一段筛子。
+func TestClearTasksReplyIsTheTableAfterwards(t *testing.T) {
+	st := newStack(t)
+	item := st.cleanItem(t)
+	st.svc.pause()
+	if _, err := st.svc.submit(contract.KindDetect, []string{item.ID}, originUser, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.svc.cancel(""); err != nil {
+		t.Fatalf("先把这一行撤成终态失败：%v", err)
+	}
+	before := st.svc.Snapshot()
+	if len(before.Tasks) != 1 {
+		t.Fatalf("清之前表里有 %d 行，用例造的那一行没进来", len(before.Tasks))
+	}
+
+	srv := ipc.NewServer(ipc.AllowAnyPeer)
+	st.svc.Register(srv)
+	l, err := ipc.Listen(st.itemsPath + ".sock3")
+	if err != nil {
+		t.Fatalf("建端点失败：%v", err)
+	}
+	go func() { _ = srv.Serve(l) }()
+	t.Cleanup(func() { _ = l.Close() })
+
+	c := ipc.NewClient()
+	if err := c.Connect(l.Addr().String()); err != nil {
+		t.Fatalf("连不上端点：%v", err)
+	}
+	t.Cleanup(func() { _ = c.Close() })
+
+	res, err := c.Call(contract.MethodClearTasks, nil, 5*time.Second)
+	if err != nil {
+		t.Fatalf("清空这一问问不下去：%v", err)
+	}
+	blob, err := json.Marshal(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snap contract.Snapshot
+	if err := json.Unmarshal(blob, &snap); err != nil {
+		t.Fatalf("回执不是一份快照，界面解不开：%v", err)
+	}
+	if len(snap.Tasks) != 0 {
+		t.Fatalf("清完还回 %d 行：那颗按钮点下去还是「没反应」", len(snap.Tasks))
+	}
+	if len(snap.Items) != len(before.Items) {
+		t.Fatalf("条目从 %d 行变成 %d 行：抹队列不该碰条目表", len(before.Items), len(snap.Items))
+	}
+}

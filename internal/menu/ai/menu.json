@@ -1,0 +1,53 @@
+{
+  "id": "ai",
+  "name": "AI 开发工具",
+  "order": 3,
+  "items": [
+    {
+      "id": "ai-cursor",
+      "name": "Cursor",
+      "domains": [
+        "cursor.com",
+        "cursorapi.com",
+        "cursor-cdn.com"
+      ]
+    },
+    {
+      "id": "ai-windsurf",
+      "name": "Windsurf",
+      "domains": [
+        "windsurf.com",
+        "codeium.com"
+      ]
+    },
+    {
+      "id": "ai-copilot",
+      "name": "GitHub Copilot",
+      "domains": [
+        "api.individual.githubcopilot.com"
+      ]
+    },
+    {
+      "id": "ai-trae",
+      "name": "Trae",
+      "domains": [
+        "trae.ai",
+        "trae-api.com"
+      ]
+    },
+    {
+      "id": "ai-gemini",
+      "name": "Gemini",
+      "domains": [
+        "daily-cloudcode-pa.googleapis.com"
+      ]
+    },
+    {
+      "id": "ai-claude",
+      "name": "Claude / MCP",
+      "domains": [
+        "api.anthropic.com"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# 依赖与构建产物(均可由 npm install / vite build / make-deb.sh 重新生成)
+node_modules/
+frontend/dist/
+build/out/
+
+# Go
+*.test
